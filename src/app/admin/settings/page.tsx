@@ -239,20 +239,6 @@ export default function AdminSettingsPage() {
             )}
             Salin Email
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => handleCopy(credentials.password, "Password")}
-            className="h-8 rounded-xl text-xs gap-1.5"
-          >
-            {copiedKey === "Password" ? (
-              <Check className="w-3.5 h-3.5 text-emerald-600" />
-            ) : (
-              <Copy className="w-3.5 h-3.5" />
-            )}
-            Salin Password
-          </Button>
         </div>
       </div>
 
@@ -502,97 +488,22 @@ export default function AdminSettingsPage() {
         </div>
       </div>
 
-      {/* Backup & Factory Reset Card */}
-      <div className="clay-card rounded-2xl p-6 border border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50/50 dark:bg-neutral-900/50 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-              <RotateCcw className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                Kredensial Default & Pemulihan Darurat
-              </h3>
-              <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                Jika Anda lupa kredensial yang diubah, Anda dapat mengembalikannya ke akun contoh bawaan kapan saja.
-              </p>
-            </div>
+      {/* Security Information Card */}
+      <div className="clay-card rounded-2xl p-6 border border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50/50 dark:bg-neutral-900/50 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <ShieldCheck className="w-5 h-5" />
           </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowResetConfirm(true)}
-            className="h-9 rounded-xl text-xs border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 gap-1.5"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            Reset ke Akun Contoh
-          </Button>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-neutral-400 text-[11px] uppercase">Default:</span>
-            <span className="font-mono font-medium text-neutral-900 dark:text-neutral-100">
-              {DEFAULT_ADMIN_CREDENTIALS.email}
-            </span>
-            <span className="text-neutral-400">•</span>
-            <span className="font-mono font-medium text-neutral-900 dark:text-neutral-100">
-              {DEFAULT_ADMIN_CREDENTIALS.password}
-            </span>
+          <div>
+            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+              Keamanan Akses Administrator
+            </h3>
+            <p className="text-xs text-neutral-600 dark:text-neutral-400">
+              Pastikan Anda menggunakan kata sandi yang kuat dan tidak membagikan kredensial login portal ini kepada pihak yang tidak berwenang.
+            </p>
           </div>
-          <span className="text-[11px] text-neutral-500">
-            Kredensial pabrik siap digunakan kembali
-          </span>
         </div>
       </div>
-
-      {/* Confirmation Modal for Reset */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="clay-card rounded-2xl p-6 max-w-md w-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                  Konfirmasi Reset Kredensial
-                </h4>
-                <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                  Apakah Anda yakin ingin mereset email dan password kembali ke akun contoh?
-                </p>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-xl bg-neutral-100 dark:bg-neutral-900 text-xs font-mono text-neutral-700 dark:text-neutral-300 space-y-1">
-              <p>Email: {DEFAULT_ADMIN_CREDENTIALS.email}</p>
-              <p>Password: {DEFAULT_ADMIN_CREDENTIALS.password}</p>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowResetConfirm(false)}
-                className="h-9 rounded-xl text-xs"
-              >
-                Batal
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleResetToDefault}
-                className="h-9 rounded-xl text-xs bg-amber-600 hover:bg-amber-700 text-white"
-              >
-                Ya, Reset Kredensial
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

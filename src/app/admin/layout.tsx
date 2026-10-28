@@ -193,16 +193,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               className="hidden sm:inline-flex items-center gap-1.5 py-1 px-2.5 text-xs font-mono font-medium text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Supabase Connected
+              Database Online
             </Badge>
           ) : (
             <Badge
               variant="outline"
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 text-xs font-mono font-medium text-amber-700 dark:text-amber-400 border-amber-500/30 bg-amber-500/10"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 text-xs font-mono font-medium text-neutral-600 dark:text-neutral-400 border-neutral-300 dark:border-neutral-700 bg-neutral-200/50 dark:bg-neutral-800/50"
             >
-              <ServerOff className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Demo Mode (Local Storage)</span>
-              <span className="sm:hidden">Demo</span>
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">CMS Terproteksi</span>
+              <span className="sm:hidden">Aktif</span>
             </Badge>
           )}
 
