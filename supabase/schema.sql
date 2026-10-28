@@ -575,6 +575,32 @@ VALUES
     ARRAY[
         'https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=1200&q=80'
     ]
+),
+(
+    (SELECT id FROM public.categories WHERE slug = 'laptop'),
+    'Apple MacBook Pro 16 (M4 Max, 36GB, 1TB SSD) - Space Black',
+    'apple-macbook-pro-16-m4-max',
+    'ALT-APL-001',
+    'Apple',
+    54999000,
+    52999000,
+    'available',
+    true,
+    'Laptop flagship komputasi profesional dengan chip Apple M4 Max, layar Liquid Retina XDR 120Hz, dan ketahanan baterai hingga 22 jam.',
+    'MacBook Pro 16 inci dengan chip M4 Max menghadirkan level performa dan efisiensi daya revolusioner untuk alur kerja terberat seperti render 3D, machine learning, dan video editing multi-stream 8K. Dilengkapi layar Liquid Retina XDR dengan kecerahan hingga 1600 nits dan baterai tahan hingga 22 jam.',
+    '[
+        {"label": "Processor", "value": "Apple M4 Max Chip (14-Core CPU, 32-Core GPU, 16-Core Neural Engine)"},
+        {"label": "Memory (RAM)", "value": "36GB Unified Memory (Bandwidth hingga 410GB/s)"},
+        {"label": "Storage", "value": "1TB Ultra-Fast PCIe NVMe SSD"},
+        {"label": "Display", "value": "16.2-inch Liquid Retina XDR (3456 x 2234), ProMotion 120Hz, 1600 Nits Peak HDR"},
+        {"label": "Battery Life", "value": "Hingga 22 jam pemutaran video (100WHr Li-Polymer)"},
+        {"label": "Ports", "value": "3x Thunderbolt 5 (USB-C), HDMI 2.1, SDXC card slot, MagSafe 3"},
+        {"label": "Garansi", "value": "1 Tahun Garansi Resmi Apple Authorized Indonesia (iBox / Digimap)"}
+    ]'::jsonb,
+    ARRAY[
+        'https://bhhnydemuntvlpwojnfd.supabase.co/storage/v1/object/public/product-images/homepage/1792864989581-x3kuhrp.png',
+        '/macbook-hero.png'
+    ]
 )
 ON CONFLICT (slug) DO NOTHING;
 

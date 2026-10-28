@@ -97,6 +97,16 @@ function getLocalProducts(): Product[] {
       const stored = localStorage.getItem(LOCAL_STORAGE_PRODUCTS_KEY);
       if (stored) {
         products = JSON.parse(stored);
+        let hasNew = false;
+        for (const initialProd of INITIAL_PRODUCTS) {
+          if (!products.some((p) => p.slug === initialProd.slug || p.id === initialProd.id)) {
+            products.unshift(initialProd);
+            hasNew = true;
+          }
+        }
+        if (hasNew) {
+          localStorage.setItem(LOCAL_STORAGE_PRODUCTS_KEY, JSON.stringify(products));
+        }
       } else {
         products = [...INITIAL_PRODUCTS];
         localStorage.setItem(LOCAL_STORAGE_PRODUCTS_KEY, JSON.stringify(products));
