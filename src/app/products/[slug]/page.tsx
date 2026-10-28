@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
+import Image from "@/components/ui/smart-image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -21,12 +21,17 @@ import {
   Wrench,
   ChevronRight,
   ExternalLink,
+  ShoppingBag,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getProductBySlug, getProducts } from "@/lib/services/catalog";
-import { formatRupiah, calculateDiscountPercentage, generateWhatsAppLink } from "@/lib/utils";
-import { Product } from "@/types/database";
+import { formatRupiah, calculateDiscountPercentage, generateWhatsAppLink, getStockBadgeColors } from "@/lib/utils";
+import { Product, SelectedUpgradePlan } from "@/types/database";
+import { CustomUpgradeModal } from "@/components/catalog/custom-upgrade-modal";
+import { useCart } from "@/context/cart-context";
 
+
+import { BrandLogo } from "@/components/layout/brand-logo";
 function ProductDetailSkeleton() {
   return (
     <div className="min-h-screen w-full bg-[#FFFFFF] dark:bg-[#0F1012] flex flex-col items-center">
@@ -57,9 +62,17 @@ function ProductDetailContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
+  // Custom Upgrade state
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [upgradePlan, setUpgradePlan] = useState<SelectedUpgradePlan | null>(null);
+
+  // Cart context
+  const { totalItems, setIsCartOpen, addToCart } = useCart();
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
 
   useEffect(() => {
     if (!slug) return;
@@ -124,9 +137,10 @@ function ProductDetailContent() {
           <div className="flex items-center gap-4 sm:gap-6">
             <Link
               href="/"
-              className="text-[25px] font-extrabold tracking-[-0.035em] text-[#111111] dark:text-white leading-none select-none"
+              className="flex items-center select-none"
+              aria-label="Alathea Comp – Beranda"
             >
-              Alathea.
+              <BrandLogo className="h-9 sm:h-10" priority />
             </Link>
 
             <div className="h-4 w-[1px] bg-zinc-300 dark:bg-zinc-700 hidden sm:block" />
@@ -157,8 +171,24 @@ function ProductDetailContent() {
               </button>
             )}
 
+            {/* Shopping Bag Button with Dynamic Counter */}
+            <button
+              type="button"
+              onClick={() => setIsCartOpen(true)}
+              className="relative w-[42px] h-[42px] rounded-full border border-[#DCDFE6] dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              title="Keranjang Belanja"
+              aria-label="Keranjang Belanja"
+            >
+              <ShoppingBag className="w-4 h-4 text-[#111111] dark:text-zinc-200" />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#111111] dark:bg-white text-white dark:text-black font-mono text-[10px] font-bold flex items-center justify-center shadow-xs">
+                  {totalItems}
+                </span>
+              )}
+            </button>
+
             <a
-              href="https://wa.me/6281234567890?text=Halo%20Admin%20Alathea%20Comp%2C%20saya%20ingin%20konsultasi%20hardware."
+              href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "6281280009848"}?text=Halo%20Admin%20Alathea%20Comp%2C%20saya%20ingin%20konsultasi%20hardware.`}
               target="_blank"
               rel="noopener noreferrer"
               className="h-[42px] px-5 sm:px-6 rounded-full bg-[#141414] dark:bg-zinc-100 text-[#F1F1F1] dark:text-zinc-950 flex items-center gap-2 hover:bg-[#262626] dark:hover:bg-white transition-colors cursor-pointer shadow-sm text-[13px] font-medium"
@@ -216,14 +246,10 @@ function ProductDetailContent() {
         {/* PRODUCT NOT FOUND STATE */}
         {!isLoading && !product && (
           <div
-            className="p-12 text-center rounded-[28px] border border-zinc-200 dark:border-zinc-800 my-12"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(234,239,246,0.92) 0%, rgba(238,242,248,0.86) 100%)",
-            }}
+            className="p-12 text-center rounded-[28px] border border-zinc-200 dark:border-zinc-800 my-12 frost-card"
           >
             <Package className="w-16 h-16 text-[#141414] dark:text-zinc-300 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold mb-2 text-[#111111] dark:text-zinc-900">
+            <h3 className="text-2xl font-bold mb-2 text-[#111111] dark:text-white">
               Produk Tidak Ditemukan
             </h3>
             <p className="text-sm text-[#676B74] mb-6 max-w-md mx-auto">
@@ -249,13 +275,7 @@ function ProductDetailContent() {
               {/* LEFT COLUMN: Main Showcase & Image Gallery in Materials Card */}
               <div className="lg:col-span-7 flex flex-col gap-4">
                 <div
-                  className="p-6 sm:p-8 rounded-[28px] relative transition-all duration-300"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, rgba(234,239,246,0.92) 0%, rgba(238,242,248,0.86) 100%)",
-                    border: "1px solid rgba(255,255,255,0.85)",
-                    boxShadow: "0 4px 24px rgba(165,180,205,0.12)",
-                  }}
+                  className="p-6 sm:p-8 rounded-[28px] relative transition-all duration-300 frost-card"
                 >
                   {/* Top Overlay Badges */}
                   <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -266,11 +286,16 @@ function ProductDetailContent() {
                       <span className="px-3 py-1 rounded-full bg-white/80 dark:bg-zinc-800 text-[11px] font-mono font-medium text-[#676B74] dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700">
                         SKU: {product.sku}
                       </span>
+                      {Boolean(product.is_ram_upgradable || product.is_ssd_upgradable) && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200/80 dark:border-emerald-800 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> Upgradable
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 dark:bg-zinc-800 text-xs font-medium text-[#111111] dark:text-white border border-zinc-200/60 dark:border-zinc-700">
-                        <span className="w-2 h-2 rounded-full bg-[#111111] dark:bg-white" />
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 dark:bg-zinc-800 text-xs font-medium border border-zinc-200/60 dark:border-zinc-700 ${getStockBadgeColors(product.stock_status)?.text ?? "text-[#111111] dark:text-white"}`}>
+                        <span className={`w-2 h-2 rounded-full ${getStockBadgeColors(product.stock_status)?.dot ?? "bg-[#111111] dark:bg-white"}`} />
                         {product.stock_status === "available"
                           ? "Ready Stock"
                           : product.stock_status === "pre_order"
@@ -285,40 +310,46 @@ function ProductDetailContent() {
                     </div>
                   </div>
 
-                  {/* Main Large Image Canvas */}
+
+                  {/* Main Large Image Canvas with Smooth Crossfade & Subtle Scale */}
                   <div className="rounded-[22px] bg-white dark:bg-[#18191D] border border-white dark:border-zinc-800 p-4 relative aspect-[4/3] sm:aspect-[16/11] flex items-center justify-center overflow-hidden shadow-inner group">
                     {activeImage ? (
-                      <Image
-                        src={activeImage}
-                        alt={product.name}
-                        fill
-                        priority
-                        className="object-cover rounded-[18px] group-hover:scale-[1.03] transition-transform duration-500"
-                        sizes="(max-width: 1024px) 100vw, 55vw"
-                      />
+                      <div
+                        key={selectedImageIndex}
+                        className="relative w-full h-full animate-in fade-in zoom-in-95 duration-400 ease-out"
+                      >
+                        <Image
+                          src={activeImage}
+                          alt={product.name}
+                          fill
+                          priority
+                          className="object-cover rounded-[18px] group-hover:scale-[1.03] transition-transform duration-500 ease-out"
+                          sizes="(max-width: 1024px) 100vw, 55vw"
+                        />
+                      </div>
                     ) : (
                       <Package className="w-16 h-16 text-zinc-400" />
                     )}
                   </div>
 
-                  {/* Image Thumbnails Selector */}
+                  {/* Image Thumbnails Selector with Smooth Hover & Active Ring Indicator */}
                   {product.images && product.images.length > 1 && (
                     <div className="flex items-center gap-3 mt-4 overflow-x-auto pb-1">
                       {product.images.map((imgUrl, idx) => (
                         <button
                           key={idx}
                           onClick={() => setSelectedImageIndex(idx)}
-                          className={`relative w-20 h-20 rounded-[14px] overflow-hidden border-2 transition-all cursor-pointer shrink-0 bg-white dark:bg-zinc-900 ${
+                          className={`relative w-20 h-20 rounded-[16px] overflow-hidden transition-all duration-300 ease-out cursor-pointer shrink-0 bg-white dark:bg-zinc-900 group ${
                             selectedImageIndex === idx
-                              ? "border-[#111111] dark:border-white shadow-md scale-95"
-                              : "border-transparent opacity-60 hover:opacity-100"
+                              ? "ring-2 ring-[#111111] dark:ring-white border-2 border-white dark:border-zinc-900 scale-100 shadow-md"
+                              : "border border-zinc-200/80 dark:border-zinc-800 opacity-60 hover:opacity-100 hover:scale-105"
                           }`}
                         >
                           <Image
                             src={imgUrl}
                             alt={`${product.name} preview ${idx + 1}`}
                             fill
-                            className="object-cover"
+                            className="object-cover transition-transform duration-300 group-hover:scale-110"
                           />
                         </button>
                       ))}
@@ -365,66 +396,133 @@ function ProductDetailContent() {
 
                 {/* Pricing & Order Card in Materials Box */}
                 <div
-                  className="p-6 rounded-[28px] border transition-all"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, rgba(234,239,246,0.92) 0%, rgba(238,242,248,0.86) 100%)",
-                    border: "1px solid rgba(255,255,255,0.85)",
-                    boxShadow: "0 4px 24px rgba(165,180,205,0.12)",
-                  }}
+                  className="p-6 rounded-[28px] border transition-all frost-card"
                 >
-                  <span className="text-xs uppercase font-bold tracking-wider text-[#8D939E] dark:text-zinc-400 block mb-1">
-                    Harga Resmi Distributor
-                  </span>
+                  {(() => {
+                    const isUpgradable = Boolean(product.is_ram_upgradable || product.is_ssd_upgradable);
+                    const ramExtra = isUpgradable && upgradePlan?.ram ? upgradePlan.ram.price : 0;
+                    const ssdExtra = isUpgradable && upgradePlan?.ssd ? upgradePlan.ssd.price : 0;
+                    const totalUpgrade = ramExtra + ssdExtra;
+                    const basePrice = product.discount_price || product.price;
+                    const combinedPrice = basePrice + totalUpgrade;
 
-                  <div className="flex items-baseline gap-3 mb-2 flex-wrap">
-                    <span className="font-mono text-3xl sm:text-4xl font-bold text-[#111111] dark:text-white">
-                      {formatRupiah(product.discount_price || product.price)}
-                    </span>
-                    {product.discount_price && (
-                      <span className="font-mono text-base text-[#8D939E] line-through">
-                        {formatRupiah(product.price)}
-                      </span>
-                    )}
-                  </div>
+                    return (
+                      <>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs uppercase font-bold tracking-wider text-[#8D939E] dark:text-zinc-400">
+                            {totalUpgrade > 0 ? "Total Estimasi Unit + Upgrade" : "Harga Resmi Distributor"}
+                          </span>
+                          {isUpgradable && (
+                            <button
+                              type="button"
+                              onClick={() => setIsUpgradeModalOpen(true)}
+                              className="text-[11px] font-bold text-[#141414] dark:text-white underline hover:opacity-75 cursor-pointer flex items-center gap-1"
+                            >
+                              <Sparkles className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                              {upgradePlan && (upgradePlan.ram || upgradePlan.ssd) ? "Ubah Paket Upgrade" : "+ Custom Upgrade"}
+                            </button>
+                          )}
+                        </div>
 
-                  <p className="text-[11.5px] text-[#676B74] dark:text-zinc-400 mb-6">
-                    *Harga sudah termasuk PPN & bergaransi resmi distributor Indonesia.
-                  </p>
+                        <div className="flex items-baseline gap-3 mb-2 flex-wrap">
+                          <span className="font-mono text-3xl sm:text-4xl font-bold text-[#111111] dark:text-white">
+                            {formatRupiah(combinedPrice)}
+                          </span>
+                          {product.discount_price && totalUpgrade === 0 && (
+                            <span className="font-mono text-base text-[#8D939E] line-through">
+                              {formatRupiah(product.price)}
+                            </span>
+                          )}
+                        </div>
 
-                  {/* Primary CTA Buttons */}
-                  <div className="space-y-3">
-                    <a
-                      href={generateWhatsAppLink(product, currentUrl)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full h-[52px] rounded-full bg-[#141414] dark:bg-white text-white dark:text-black hover:bg-[#262626] dark:hover:bg-zinc-100 font-semibold text-sm flex items-center justify-center gap-2.5 shadow-md transition cursor-pointer"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      <span>Order via WhatsApp Resmi</span>
-                    </a>
+                        {/* Upgrade Summary Pills if selected */}
+                        {isUpgradable && upgradePlan && (upgradePlan.ram || upgradePlan.ssd) && (
+                          <div className="mb-4 p-3 rounded-xl bg-white/90 dark:bg-zinc-800/90 border border-zinc-200/80 dark:border-zinc-700 text-xs space-y-1">
+                            <div className="font-bold text-[#111111] dark:text-white flex items-center justify-between">
+                              <span>Paket Upgrade Terpilih (+{formatRupiah(totalUpgrade)}):</span>
+                              <button
+                                type="button"
+                                onClick={() => setUpgradePlan(null)}
+                                className="text-[10px] text-zinc-400 hover:text-red-500 font-medium"
+                              >
+                                Batal
+                              </button>
+                            </div>
+                            {upgradePlan.ram && (
+                              <div className="text-[11.5px] text-[#2D3138] dark:text-zinc-300">
+                                • RAM: {upgradePlan.ram.name} (+{formatRupiah(upgradePlan.ram.price)})
+                              </div>
+                            )}
+                            {upgradePlan.ssd && (
+                              <div className="text-[11.5px] text-[#2D3138] dark:text-zinc-300">
+                                • SSD: {upgradePlan.ssd.name} (+{formatRupiah(upgradePlan.ssd.price)})
+                              </div>
+                            )}
+                          </div>
+                        )}
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={handleCopyLink}
-                        className="h-[44px] rounded-full border border-[#D0D5DD] dark:border-zinc-700 bg-white/80 dark:bg-zinc-800 hover:bg-white text-[#141414] dark:text-zinc-200 text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer"
-                      >
-                        <Share2 className="w-3.5 h-3.5 text-[#111111] dark:text-white" />
-                        <span>Bagikan Link</span>
-                      </button>
+                        <p className="text-[11.5px] text-[#676B74] dark:text-zinc-400 mb-6">
+                          *Harga sudah termasuk PPN & bergaransi resmi distributor Indonesia. Pemasangan oleh teknisi resmi Alathea Comp.
+                        </p>
 
-                      <a
-                        href={`https://wa.me/6281234567890?text=Halo%20Admin%20Alathea%2C%20saya%20ingin%20tanya%20kompatibilitas%20untuk%20produk%20${encodeURIComponent(product.name)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="h-[44px] rounded-full border border-[#D0D5DD] dark:border-zinc-700 bg-white/80 dark:bg-zinc-800 hover:bg-white text-[#141414] dark:text-zinc-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
-                      >
-                        <Cpu className="w-3.5 h-3.5 text-[#111111] dark:text-white" />
-                        <span>Tanya Teknisi</span>
-                      </a>
-                    </div>
-                  </div>
+                        {/* Primary CTA Buttons */}
+                        <div className="space-y-3">
+                          <a
+                            href={
+                              product.stock_status === "out_of_stock"
+                                ? undefined
+                                : generateWhatsAppLink(
+                                    product,
+                                    currentUrl,
+                                    isUpgradable && upgradePlan ? upgradePlan : undefined
+                                  )
+                            }
+                            aria-disabled={product.stock_status === "out_of_stock"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="aria-disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none w-full h-[52px] rounded-full bg-[#141414] dark:bg-white text-white dark:text-black hover:bg-[#262626] dark:hover:bg-zinc-100 font-semibold text-sm flex items-center justify-center gap-2.5 shadow-md transition cursor-pointer"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            <span>
+                              {totalUpgrade > 0 ? "Order Unit + Upgrade via WhatsApp" : "Order via WhatsApp Resmi"}
+                            </span>
+                          </a>
+
+                          <button
+                            type="button"
+                            disabled={product.stock_status === "out_of_stock"}
+                            onClick={() => addToCart(product, 1, isUpgradable && upgradePlan ? upgradePlan : undefined)}
+                            className="w-full h-[48px] rounded-full border-2 border-[#141414] dark:border-white bg-transparent hover:bg-[#141414] hover:text-white dark:hover:bg-white dark:hover:text-black text-[#141414] dark:text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+                          >
+                            <ShoppingBag className="w-4 h-4" />
+                            <span>+ Tambah ke Keranjang Belanja</span>
+                          </button>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <button
+                              onClick={handleCopyLink}
+                              className="h-[44px] rounded-full border border-[#D0D5DD] dark:border-zinc-700 bg-white/80 dark:bg-zinc-800 hover:bg-white text-[#141414] dark:text-zinc-200 text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer"
+                            >
+                              <Share2 className="w-3.5 h-3.5 text-[#111111] dark:text-white" />
+                              <span>Bagikan Link</span>
+                            </button>
+
+                            <a
+                              href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "6281280009848"}?text=Halo%20Admin%20Alathea%2C%20saya%20ingin%20tanya%20kompatibilitas%20untuk%20produk%20${encodeURIComponent(product.name)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="h-[44px] rounded-full border border-[#D0D5DD] dark:border-zinc-700 bg-white/80 dark:bg-zinc-800 hover:bg-white text-[#141414] dark:text-zinc-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                            >
+                              <Cpu className="w-3.5 h-3.5 text-[#111111] dark:text-white" />
+                              <span>Tanya Teknisi</span>
+                            </a>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
+
 
                 {/* Key Spec Quick Highlights */}
                 {product.specifications && product.specifications.length > 0 && (
@@ -522,14 +620,7 @@ function ProductDetailContent() {
                     return (
                       <div
                         key={rel.id}
-                        className="p-5 flex flex-col justify-between group transition-all duration-300"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, rgba(234,239,246,0.92) 0%, rgba(238,242,248,0.86) 100%)",
-                          borderRadius: "28px",
-                          border: "1px solid rgba(255,255,255,0.85)",
-                          boxShadow: "0 4px 24px rgba(165,180,205,0.12)",
-                        }}
+                        className="p-5 flex flex-col justify-between group transition-all duration-300 rounded-[28px] frost-card"
                       >
                         <div>
                           <div className="flex items-center justify-between mb-3">
@@ -606,10 +697,18 @@ function ProductDetailContent() {
           </div>
           <div>© {new Date().getFullYear()} Alathea Comp. All rights reserved.</div>
         </footer>
+        {/* Custom Upgrade Simulation Modal */}
+        <CustomUpgradeModal
+          isOpen={isUpgradeModalOpen}
+          onClose={() => setIsUpgradeModalOpen(false)}
+          onApplyUpgrade={(plan) => setUpgradePlan(plan)}
+          currentPlan={upgradePlan || undefined}
+        />
       </div>
     </div>
   );
 }
+
 
 export default function ProductDetailPage() {
   return (

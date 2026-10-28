@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
+import Image from "@/components/ui/smart-image";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import {
@@ -18,11 +18,18 @@ import {
   MessageCircle,
   Sun,
   Moon,
+  ShoppingBag,
+  Phone,
 } from "lucide-react";
-import { getCategories, getProducts } from "@/lib/services/catalog";
-import { formatRupiah, calculateDiscountPercentage, generateWhatsAppLink } from "@/lib/utils";
-import { Category, Product } from "@/types/database";
+import { getCategories, getHomepageHero, getProducts } from "@/lib/services/catalog";
+import { formatRupiah, calculateDiscountPercentage, generateWhatsAppLink, getStockBadgeColors } from "@/lib/utils";
+import { Category, HomepageHero, Product, SelectedUpgradePlan } from "@/types/database";
+import { INITIAL_HOMEPAGE_HERO } from "@/lib/seed-data";
+import { RamSsdHardwareGraphic } from "@/components/catalog/ram-ssd-graphic";
+import { CustomUpgradeModal } from "@/components/catalog/custom-upgrade-modal";
+import { useCart } from "@/context/cart-context";
 
+import { BrandLogo } from "@/components/layout/brand-logo";
 /**
  * Custom Titanium Crystal Cluster Component
  * Renders a photorealistic multi-faceted raw titanium crystal rock tilted at -36deg
@@ -247,6 +254,23 @@ export default function LandingPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Cart Context
+  const { totalItems, setIsCartOpen, addToCart } = useCart();
+
+  // Hero image + floating labels, editable in Admin > Tampilan Beranda
+  const [hero, setHero] = useState<HomepageHero>(INITIAL_HOMEPAGE_HERO);
+  useEffect(() => {
+    getHomepageHero().then((res) => {
+      if (res) setHero(res);
+    });
+  }, []);
+
+  // Custom Upgrade state
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [appliedUpgradePlan, setAppliedUpgradePlan] = useState<SelectedUpgradePlan | null>(null);
+  const [showOnlyUpgradable, setShowOnlyUpgradable] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -291,8 +315,10 @@ export default function LandingPage() {
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.sku.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const matchesUpgradable = !showOnlyUpgradable || p.is_ram_upgradable || p.is_ssd_upgradable;
+    return matchesCategory && matchesSearch && matchesUpgradable;
   });
+
 
   const featuredProduct = products.find((p) => p.is_featured) || products[0];
 
@@ -305,12 +331,12 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#FFFFFF] dark:bg-[#0F1012] text-[#111111] dark:text-[#F4F4F5] flex flex-col items-center justify-start overflow-x-clip selection:bg-[#111111] selection:text-white transition-colors duration-200 font-jakarta">
+    <div className="min-h-screen w-full bg-[#FFFFFF] dark:bg-[#0b0d10] text-[#111111] dark:text-[#F4F4F5] flex flex-col items-center justify-start overflow-x-clip selection:bg-[#111111] selection:text-white transition-colors duration-200 font-jakarta">
       {/* ============================================================
           1. FIXED / STICKY TOP NAVBAR (Subtle Drop Shadow & Frosted Glass)
          ============================================================ */}
-      <header className="sticky top-0 z-40 w-full bg-white/85 dark:bg-[#0F1012]/85 backdrop-blur-md border-b border-zinc-200/70 dark:border-zinc-800/70 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.35)] transition-all">
-        <div className="w-full max-w-[1440px] mx-auto px-6 sm:px-11 py-3.5 flex items-center justify-between">
+      <header className="sticky top-0 z-40 w-full bg-white/85 dark:bg-[#0b0d10]/85 backdrop-blur-md border-b border-zinc-200/70 dark:border-zinc-800/70 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.35)] transition-all">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-11 py-3.5 flex items-center justify-between gap-2">
           {/* Left Group: Logo + Menu + Search */}
           <div className="flex items-center">
             <Link
@@ -320,15 +346,16 @@ export default function LandingPage() {
                 setSecondsElapsed(97);
                 setWheelRotation(0);
               }}
-              className="text-[25px] font-extrabold tracking-[-0.035em] text-[#111111] dark:text-white leading-none select-none"
+              className="flex items-center select-none"
+              aria-label="Alathea Comp – Beranda"
             >
-              Alathea.
+              <BrandLogo className="h-7 sm:h-11" priority />
             </Link>
 
             {/* Menu Button with custom 2-line + dot icon */}
             <button
               onClick={() => setActiveModal("menu")}
-              className="ml-8 sm:ml-[54px] flex items-center gap-2.5 text-[13.5px] font-medium text-[#1E1E1E] dark:text-zinc-200 hover:opacity-70 transition-opacity cursor-pointer"
+              className="ml-3 sm:ml-[54px] flex items-center gap-2.5 text-[13.5px] font-medium text-[#1E1E1E] dark:text-zinc-200 hover:opacity-70 transition-opacity cursor-pointer"
               aria-label="Open Menu"
             >
               <span className="flex flex-col justify-center gap-[3.5px] w-[22px]">
@@ -338,13 +365,13 @@ export default function LandingPage() {
                   <span className="w-[17px] h-[1.6px] bg-[#1E1E1E] dark:bg-zinc-200 rounded-full" />
                 </span>
               </span>
-              <span>Menu</span>
+              <span className="hidden sm:inline">Menu</span>
             </button>
 
             {/* Search Icon Button */}
             <button
               onClick={() => setActiveModal("search")}
-              className="ml-7 text-[#1E1E1E] dark:text-zinc-300 hover:opacity-70 transition-opacity p-1 cursor-pointer"
+              className="ml-2 sm:ml-7 text-[#1E1E1E] dark:text-zinc-300 hover:opacity-70 transition-opacity p-1 cursor-pointer"
               aria-label="Search"
             >
               <Search className="w-[17px] h-[17px] stroke-[1.8] text-[#111111] dark:text-white" />
@@ -352,13 +379,13 @@ export default function LandingPage() {
           </div>
 
           {/* Right Group: Theme Switcher + Compare Bag + Contact Us WhatsApp Pill */}
-          <div className="flex items-center gap-3 sm:gap-3.5">
+          <div className="flex items-center gap-2 sm:gap-3.5 shrink-0">
             {/* Light/Dark Mode Toggle */}
             {mounted && (
               <button
                 type="button"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="w-[42px] h-[42px] rounded-full border border-[#DCDFE6] dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                className="w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] rounded-full border border-[#DCDFE6] dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                 aria-label="Toggle Theme"
                 title={theme === "dark" ? "Ganti ke Light Mode" : "Ganti ke Dark Mode"}
               >
@@ -370,16 +397,14 @@ export default function LandingPage() {
               </button>
             )}
 
-            {/* Shopping / Compare Bag Button with external superscript counter */}
+            {/* Shopping Bag Button with dynamic counter */}
             <div className="relative">
               <button
-                onClick={() => {
-                  setCartCount((c) => (c >= 9 ? 1 : c + 1));
-                  handleScrollToCatalog();
-                }}
-                className="w-[42px] h-[42px] rounded-full border border-[#DCDFE6] dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                type="button"
+                onClick={() => setIsCartOpen(true)}
+                className="w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] rounded-full border border-[#DCDFE6] dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                 aria-label="Shopping Bag"
-                title="Lihat Item Terpilih"
+                title="Buka Keranjang Belanja"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -394,17 +419,19 @@ export default function LandingPage() {
                 </svg>
               </button>
               <span className="absolute -top-0.5 -right-2 text-[11px] font-semibold text-[#141414] dark:text-zinc-200 leading-none">
-                {cartCount}
+                {totalItems}
               </span>
             </div>
 
             {/* Contact WhatsApp Dark Pill Button */}
             <button
               onClick={() => setActiveModal("contact")}
-              className="h-[42px] pl-5 sm:pl-6 pr-4 sm:pr-5 rounded-full bg-[#141414] dark:bg-zinc-100 text-[#F1F1F1] dark:text-zinc-950 flex items-center gap-4 sm:gap-7 hover:bg-[#262626] dark:hover:bg-white transition-colors cursor-pointer shadow-sm"
+              aria-label="Contact Us"
+              className="w-[38px] h-[38px] justify-center sm:w-auto sm:h-[42px] sm:justify-start sm:pl-6 sm:pr-5 rounded-full bg-[#141414] dark:bg-zinc-100 text-[#F1F1F1] dark:text-zinc-950 flex items-center sm:gap-7 hover:bg-[#262626] dark:hover:bg-white transition-colors cursor-pointer shadow-sm"
             >
-              <span className="text-[13px] font-normal tracking-[0.01em]">Contact Us</span>
-              <ArrowUpRight className="w-[15px] h-[15px] text-[#EAEAEA] dark:text-zinc-900 stroke-[1.7]" />
+              <MessageCircle className="w-4 h-4 sm:hidden" />
+              <span className="hidden sm:inline text-[13px] font-normal tracking-[0.01em]">Contact Us</span>
+              <ArrowUpRight className="hidden sm:block w-[15px] h-[15px] text-[#EAEAEA] dark:text-zinc-900 stroke-[1.7]" />
             </button>
           </div>
         </div>
@@ -442,8 +469,8 @@ export default function LandingPage() {
                       index > 0 ? "-mt-[3.5px]" : ""
                     } ${
                       isActive
-                        ? "bg-[#111111] dark:bg-white text-white dark:text-black border border-[#111111] dark:border-white"
-                        : "bg-white/90 dark:bg-zinc-900 text-[#1E1E1E] dark:text-zinc-400 border border-[#484E58] dark:border-zinc-700 hover:border-[#111111]"
+                        ? "bg-[#111111] dark:bg-white text-white dark:text-black dark:font-semibold border border-[#111111] dark:border-white"
+                        : "bg-white/90 dark:bg-transparent text-[#1E1E1E] dark:text-white/55 border border-[#484E58] dark:border-white/25 hover:border-[#111111] dark:hover:border-white/60 dark:hover:text-white"
                     }`}
                     title={`Bagian 0${step}`}
                   >
@@ -453,7 +480,7 @@ export default function LandingPage() {
               })}
             </div>
 
-            <div className="mt-9 w-[1.5px] h-[106px] bg-[#CBD5E6] dark:bg-zinc-800 relative rounded-full overflow-hidden">
+            <div className="mt-9 w-[1.5px] h-[106px] bg-[#CBD5E6] dark:bg-white/10 relative rounded-full overflow-hidden">
               <div
                 className="absolute left-0 w-full bg-[#141414] dark:bg-zinc-100 transition-all duration-300"
                 style={{
@@ -474,10 +501,11 @@ export default function LandingPage() {
             <div className="lg:col-span-6 z-20 pr-2">
               {/* Hot Hardware Badge */}
               <div className="flex items-center gap-4 mb-7">
-                <div className="w-[50px] h-[50px] rounded-full bg-[#EAEFF6] dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                <div className="w-[50px] h-[50px] rounded-full bg-[#EAEFF6] dark:bg-white/[0.05] dark:border dark:border-white/10 dark:shadow-[0_0_24px_rgba(56,189,248,0.15)] flex items-center justify-center shrink-0">
                   <svg
                     viewBox="0 0 24 24"
-                    className="w-[22px] h-[22px] stroke-[#141414] dark:stroke-zinc-100"
+                    aria-hidden="true"
+                    className="w-[22px] h-[22px] stroke-[#141414] dark:stroke-sky-300 motion-safe:animate-[spin_14s_linear_infinite]"
                     strokeWidth="2.3"
                     strokeLinecap="round"
                   >
@@ -490,7 +518,7 @@ export default function LandingPage() {
                   <h2 className="text-[20px] font-bold text-[#141414] dark:text-zinc-100 leading-tight tracking-[-0.01em]">
                     Hot Hardware
                   </h2>
-                  <p className="text-[13.5px] font-normal text-[#8D939E] dark:text-zinc-400 leading-snug mt-0.5">
+                  <p className="text-[13.5px] font-normal text-[#8D939E] dark:text-[#A1A1AA] leading-snug mt-0.5">
                     Revolution in Personal Computing
                   </p>
                 </div>
@@ -504,373 +532,175 @@ export default function LandingPage() {
               </h1>
 
               {/* Subtitle */}
-              <p className="text-[16.5px] sm:text-[17px] font-normal text-[#676B74] dark:text-zinc-400 leading-[1.6] max-w-[440px] mb-8">
+              <p className="text-[16.5px] sm:text-[17px] font-normal text-[#676B74] dark:text-[#A1A1AA] leading-[1.6] max-w-[440px] mb-8">
                 Get the best by trusting us, we offer the best quality and the best price with official warranty.
               </p>
 
               {/* Action Buttons */}
               <div className="flex items-center gap-4 flex-wrap">
                 <button
-                  onClick={handleScrollToCatalog}
-                  className="w-[206px] h-[58px] rounded-full border-[1.2px] border-[#262626] dark:border-zinc-700 bg-transparent hover:bg-[#111111] hover:text-white dark:hover:bg-zinc-100 dark:hover:text-black text-[#111111] dark:text-zinc-100 group transition-all duration-200 flex items-center justify-between px-7 cursor-pointer"
+                  type="button"
+                  onClick={() => {
+                    if (featuredProduct) {
+                      addToCart(featuredProduct, 1);
+                      setIsCartOpen(true);
+                    } else {
+                      handleScrollToCatalog();
+                    }
+                  }}
+                  className="w-[206px] h-[58px] rounded-full border-[1.2px] border-[#262626] dark:border-white bg-transparent dark:bg-white hover:bg-[#111111] hover:text-white dark:hover:bg-white dark:hover:text-black dark:hover:shadow-[0_0_15px_rgba(255,255,255,0.3)] text-[#111111] dark:text-black group transition-all duration-200 flex items-center justify-between px-7 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0b0d10]"
                 >
-                  <span className="text-[15px] font-medium tracking-[-0.01em]">Buy Now</span>
-                  <ArrowUpRight className="w-[18px] h-[18px] stroke-[1.8] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 text-[#111111] dark:text-white group-hover:text-white dark:group-hover:text-black" />
+                  <span className="text-[15px] font-medium dark:font-semibold tracking-[-0.01em]">Buy Now</span>
+                  <ArrowUpRight className="w-[18px] h-[18px] stroke-[1.8] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 text-[#111111] dark:text-black group-hover:text-white dark:group-hover:text-black" />
                 </button>
               </div>
             </div>
 
-            {/* RIGHT COLUMN: Tilted Flagship Workstation Assembly + 3 Frosted Widgets */}
+            {/* RIGHT COLUMN: MacBook Pro Flagship Laptop Visual (Full Object + Drop Shadow) + 3 Floating Widgets */}
             <div className="lg:col-span-6 relative h-[520px] flex items-center justify-center mt-10 lg:mt-0">
-              <div className="relative w-[360px] h-[454px] rotate-[15.5deg] translate-x-6 -translate-y-1 select-none">
-                {/* Bottom Metallic Heatpipe Pole Extending Down Behind Bottom Card */}
-                <div
-                  className="absolute -bottom-[210px] right-[40px] w-[52px] h-[230px] z-0 overflow-hidden"
-                  style={{
-                    background:
-                      "linear-gradient(90deg, #6E7E94 0%, #9BAAC0 22%, #C5D2E4 45%, #8494AA 72%, #59677B 100%)",
-                    boxShadow: "8px 16px 28px rgba(100,120,150,0.28)",
-                  }}
-                >
-                  <div
-                    className="w-full h-full opacity-45"
+              {/* Dark mode ambient light behind the hardware */}
+              <div
+                aria-hidden="true"
+                className="hidden dark:block pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[440px] h-[440px] sm:w-[560px] sm:h-[560px] rounded-full blur-[60px]"
+                style={{
+                  background:
+                    "radial-gradient(circle at center, rgba(56, 189, 248, 0.12) 0%, rgba(139, 92, 246, 0.08) 40%, transparent 70%)",
+                }}
+              />
+              {/* Full Laptop Object directly without div container, with rich realistic drop shadow */}
+              <div className="relative z-10 w-[420px] sm:w-[500px] lg:w-[540px] h-[340px] sm:h-[390px] select-none flex items-center justify-center translate-x-1 lg:translate-x-3 transition-transform duration-700 hover:scale-[1.03]">
+                {hero ? (
+                  <Image
+                    src={hero.image_url || "/macbook-hero.png"}
+                    alt={hero.image_alt || "Apple MacBook Pro M4 Max"}
+                    fill
+                    priority
+                    className="object-contain"
                     style={{
-                      backgroundImage:
-                        "repeating-linear-gradient(90deg, transparent 0px, transparent 2px, rgba(255,255,255,0.5) 2px, rgba(255,255,255,0.5) 3px, rgba(25,35,50,0.3) 4px)",
+                      filter:
+                        "drop-shadow(-18px 28px 36px rgba(15, 23, 42, 0.26)) drop-shadow(0 10px 18px rgba(0, 0, 0, 0.12))",
                     }}
+                    sizes="(max-width: 640px) 420px, (max-width: 1024px) 500px, 540px"
                   />
-                  <div className="absolute inset-y-0 left-[38%] w-[2.5px] bg-[#2D3748]/70" />
-                  <div className="absolute inset-y-0 left-[44%] w-[1px] bg-white/60" />
-                </div>
-
-                {/* Top-Left CNC Jack Sleeve Protrusion */}
-                <div
-                  className="absolute -top-[42px] left-[28px] w-[11px] h-[44px] rounded-t-sm"
-                  style={{
-                    background:
-                      "linear-gradient(90deg, #E2E9F3 0%, #FFFFFF 45%, #C5D1E3 85%, #9AA8BE 100%)",
-                    boxShadow: "0 -2px 6px rgba(160,180,205,0.25)",
-                  }}
-                />
-
-                {/* Left Side Sculpted Aluminum Rocker / Side-Lever Mechanism */}
-                <div className="absolute top-[74px] -left-[22px] w-[26px] h-[222px] z-10 pointer-events-none">
-                  <svg viewBox="0 0 32 240" className="w-full h-full overflow-visible">
-                    <defs>
-                      <linearGradient id="leverGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#F2F6FC" />
-                        <stop offset="55%" stopColor="#DAE5F4" />
-                        <stop offset="100%" stopColor="#B2C1D8" />
-                      </linearGradient>
-                    </defs>
-                    <path
-                      d="M 28,4 L 14,12 C 8,15 6,22 6,30 L 6,96 C 6,104 12,110 12,118 C 12,126 6,132 6,140 L 6,204 C 6,214 10,220 18,224 L 28,228 Z"
-                      fill="url(#leverGrad)"
-                      stroke="#9BAAC2"
-                      strokeWidth="1"
-                    />
-                    <circle cx="17" cy="24" r="4.5" fill="#BCCAE0" stroke="#7A8A9F" strokeWidth="0.8" />
-                    <path d="M 6,108 Q 20,120 6,132" fill="none" stroke="#7C8B9F" strokeWidth="1.4" />
-                    <circle cx="18" cy="120" r="3" fill="#68768A" />
-                    <circle cx="17" cy="212" r="5" fill="#C4D2E6" stroke="#7A8A9F" strokeWidth="1" />
-                  </svg>
-                </div>
-
-                {/* Right Side 3D Extruded Chassis Edge */}
-                <div
-                  className="absolute top-[16px] -right-[7px] w-[8px] h-[422px] rounded-r-[14px] z-0"
-                  style={{
-                    background: "linear-gradient(180deg, #C7D5EA 0%, #9EB0CA 50%, #7E90AC 100%)",
-                  }}
-                >
-                  <div className="w-[3.5px] h-[24px] bg-[#64748B] rounded-r-sm mt-[68px] ml-[5px]" />
-                  <div className="w-[3.5px] h-[34px] bg-[#475569] rounded-r-sm mt-[14px] ml-[5px]" />
-                  <div className="w-[3.5px] h-[22px] bg-[#64748B] rounded-r-sm mt-[38px] ml-[5px]" />
-                </div>
-
-                {/* MAIN ANODIZED CHASSIS BODY */}
-                <div
-                  className="relative w-full h-full rounded-[22px] overflow-hidden z-10 flex flex-col justify-between"
-                  style={{
-                    background:
-                      "linear-gradient(142deg, #F5F8FD 0%, #E5EDF8 38%, #D2DFEF 76%, #C2D2E8 100%)",
-                    boxShadow:
-                      "inset 0 2px 3px rgba(255,255,255,0.95), inset -4px -4px 12px rgba(135,155,185,0.38), -12px 24px 48px rgba(145,168,200,0.32)",
-                    border: "1px solid rgba(255,255,255,0.85)",
-                  }}
-                >
-                  {/* Header Zone: "ALATHEA •" and OLED Screen */}
-                  <div className="relative pt-4 px-6 flex items-start justify-between">
-                    <div className="flex items-center gap-3.5">
-                      <span className="text-[24px] font-bold tracking-[0.04em] text-[#5B6678] leading-none">
-                        ALATHEA
-                      </span>
-                      <span className="w-[5px] h-[5px] rounded-full bg-[#1E242B] mt-0.5" />
-                    </div>
-
-                    <span className="w-[4px] h-[4px] rounded-full bg-[#252B33] mt-3.5 -ml-6" />
-
-                    {/* Recessed OLED Display */}
-                    <div
-                      className="w-[92px] h-[46px] rounded-[6px] bg-[#0D1218] p-1.5 flex flex-col justify-between border-[1.5px] border-[#515E70] shadow-inner -mr-1 mt-0.5"
-                      style={{
-                        boxShadow: "inset 0 2px 5px rgba(0,0,0,0.85), 0 1px 2px rgba(255,255,255,0.6)",
-                      }}
-                    >
-                      <div className="font-mono text-[12px] font-semibold tracking-[0.14em] text-[#F1F5F9] leading-none text-center">
-                        READY
-                      </div>
-                      <div className="flex items-center justify-between px-0.5 font-mono">
-                        <span className="text-[9.5px] font-medium text-[#CBD5E1] tracking-tighter leading-none">
-                          {formatOledTimer(secondsElapsed)}
-                        </span>
-                        <span className="bg-[#D8E2EF] text-[#0D1218] text-[8.5px] font-bold px-1 py-[0.5px] rounded-[2px] leading-tight">
-                          0{trackNumber}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status indicator on upper-left & badge on right */}
-                  <div className="absolute top-[60px] left-[22px] w-[7px] h-[7px] rounded-full bg-white/90 shadow-[0_0_6px_#fff]" />
-                  <div className="absolute top-[86px] right-[18px] w-[14px] h-[14px] rounded-[3px] bg-[#141414] text-white text-[8.5px] font-bold flex items-center justify-center shadow-sm">
-                    PC
-                  </div>
-
-                  {/* CENTER MOTORIZED TURBINE JOG WHEEL */}
-                  <div className="relative w-[306px] h-[306px] mx-auto -mt-3 rounded-full flex items-center justify-center">
-                    <div
-                      className="w-full h-full rounded-full border-[1.6px] border-[#6F7E94] flex items-center justify-center relative overflow-hidden transition-transform duration-75"
-                      style={{
-                        transform: `rotate(${wheelRotation}deg)`,
-                        background:
-                          "conic-gradient(from 135deg at 50% 50%, #E7EFFA 0deg, #D5E1F2 75deg, #EEF4FC 155deg, #C9D7EC 245deg, #E2ECFA 315deg, #E7EFFA 360deg)",
-                        boxShadow:
-                          "inset 0 2px 5px rgba(255,255,255,0.9), inset 0 -3px 8px rgba(120,140,170,0.35), 0 3px 10px rgba(90,110,140,0.18)",
-                      }}
-                    >
-                      <div className="absolute w-full h-[1px] bg-gradient-to-r from-transparent via-white/75 to-transparent -rotate-[42deg]" />
-
-                      <div className="absolute w-full h-full flex items-center justify-center rotate-[44deg]">
-                        <div className="w-full h-[1px] bg-[#9AA8BE]/55" />
-                        <span className="absolute left-[46px] -top-[14px] font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[#687588] select-none">
-                          RTX 4070
-                        </span>
-                        <span className="absolute right-[42px] top-[6px] font-mono text-[10.5px] font-semibold tracking-[0.1em] text-[#687588] select-none">
-                          7800X3D
-                        </span>
-                      </div>
-
-                      <div
-                        className="relative z-10 w-[76px] h-[76px] rounded-full flex items-center justify-center"
-                        style={{
-                          background: "linear-gradient(135deg, #778192 0%, #586272 100%)",
-                          boxShadow: "inset 0 2px 4px rgba(255,255,255,0.25), 0 2px 6px rgba(40,50,65,0.35)",
-                        }}
-                      >
-                        <span className="absolute top-[18px] right-[26px] w-[4.5px] h-[4.5px] rounded-full bg-[#E8EEF6]" />
-                        <span className="absolute bottom-[25px] left-[16px] w-[4.5px] h-[4.5px] rounded-full bg-[#E8EEF6]" />
-                        <span className="absolute bottom-[16px] right-[22px] w-[4.5px] h-[4.5px] rounded-full bg-[#E8EEF6]" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="absolute bottom-[88px] right-[22px] w-[22px] h-[22px] rounded-full border border-[#96A5BC]/75 pointer-events-none" />
-
-                  {/* BOTTOM PHYSICAL TRANSPORT KEYS */}
-                  <div className="relative h-[82px] w-full px-5 bg-transparent flex flex-col justify-end">
-                    <div className="w-full h-[2px] bg-[#647286]" />
-
-                    <div className="grid grid-cols-3 h-[76px] w-full bg-[#647286] gap-[2px]">
-                      <button
-                        onClick={() =>
-                          setTransportMode((m) => (m === "recording" ? "paused" : "recording"))
-                        }
-                        title="Turbo Mode"
-                        className={`relative h-full w-full transition-all cursor-pointer active:translate-y-[1px] ${
-                          transportMode === "recording" ? "brightness-95" : "hover:brightness-98"
-                        }`}
-                        style={{
-                          background: "linear-gradient(180deg, #DCE6F6 0%, #CBD8EC 82%, #B8C8E0 100%)",
-                          boxShadow: "inset 0 1px 1px rgba(255,255,255,0.85)",
-                        }}
-                      >
-                        <span
-                          className={`absolute top-3.5 left-3.5 w-[11px] h-[11px] rounded-full bg-[#111111] ${
-                            transportMode === "recording" ? "animate-ping" : ""
-                          }`}
-                        />
-                        <span className="absolute top-3.5 left-3.5 w-[11px] h-[11px] rounded-full bg-[#111111]" />
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          setTransportMode((m) => (m === "playing" ? "paused" : "playing"))
-                        }
-                        title="Silent Airflow"
-                        className={`relative h-full w-full flex items-center justify-center transition-all cursor-pointer active:translate-y-[1px] ${
-                          transportMode === "playing" ? "brightness-95" : "hover:brightness-98"
-                        }`}
-                        style={{
-                          background: "linear-gradient(180deg, #DCE6F6 0%, #CBD8EC 82%, #B8C8E0 100%)",
-                          boxShadow: "inset 0 1px 1px rgba(255,255,255,0.85)",
-                        }}
-                      >
-                        <svg viewBox="0 0 16 16" className="w-[13px] h-[13px] fill-[#181E26] -mt-2">
-                          <polygon points="3,2 14,8 3,14" />
-                        </svg>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setTransportMode("paused");
-                          setTrackNumber((t) => (t % 9) + 1);
-                        }}
-                        title="Stop / Reset"
-                        className="relative h-full w-full flex items-center justify-center transition-all cursor-pointer hover:brightness-98 active:translate-y-[1px]"
-                        style={{
-                          background: "linear-gradient(180deg, #DCE6F6 0%, #CBD8EC 82%, #B8C8E0 100%)",
-                          boxShadow: "inset 0 1px 1px rgba(255,255,255,0.85)",
-                        }}
-                      >
-                        <div className="w-[10px] h-[10px] bg-[#181E26] rounded-[1px] -mt-2" />
-                      </button>
-                    </div>
-
-                    <div className="w-full h-[5px] bg-gradient-to-b from-[#9BAAC0] to-[#BCCAE0] border-t border-[#728197]" />
-                  </div>
-                </div>
+                ) : (
+                  <div className="w-[420px] h-[300px] rounded-3xl animate-pulse bg-neutral-200/50 dark:bg-neutral-800/50" />
+                )}
               </div>
 
               {/* 3 FLOATING FROSTED GLASS CALLOUT WIDGETS & SVG POINTER LINES */}
               {/* 1. TOP-LEFT CALLOUT */}
-              <div className="absolute top-[28px] left-[6px] sm:left-[18px] z-30 flex items-center pointer-events-none">
-                <div
-                  className="w-[160px] py-[16px] px-3.5 rounded-[18px] text-center backdrop-blur-md"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, rgba(238,242,247,0.92) 0%, rgba(229,234,242,0.88) 100%)",
-                    boxShadow:
-                      "0 10px 25px rgba(150,165,190,0.16), inset 0 1px 1px rgba(255,255,255,0.95)",
-                    border: "1px solid rgba(255,255,255,0.85)",
-                  }}
-                >
-                  <div className="text-[13px] font-semibold text-[#18181B] leading-tight">
-                    OLED 240Hz
+              {hero?.callouts[0]?.title && (
+                <div className="absolute top-[28px] left-[6px] sm:left-[18px] z-30 flex items-center pointer-events-none animate-in fade-in duration-500">
+                  <div className="hero-callout w-[170px] text-center">
+                    <div className="text-[13px] font-bold text-[#18181B] dark:text-white leading-tight">
+                      {hero.callouts[0].title}
+                    </div>
+                    <div className="text-[10px] font-medium text-[#64748B] dark:text-[#A1A1AA] mt-1 leading-tight">
+                      {hero.callouts[0].subtitle}
+                    </div>
                   </div>
-                  <div className="text-[9.5px] font-normal text-[#7B818E] mt-1.5 leading-tight">
-                    ROG Nebula 100% DCI-P3 Display
-                  </div>
-                </div>
 
-                <svg
-                  width="98"
-                  height="48"
-                  viewBox="0 0 98 48"
-                  fill="none"
-                  className="-ml-[1px] mt-7 overflow-visible"
-                >
-                  <defs>
-                    <linearGradient id="lineLithium" x1="0" y1="0" x2="98" y2="48" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#262B33" stopOpacity="0.95" />
-                      <stop offset="72%" stopColor="#4A5568" stopOpacity="0.7" />
-                      <stop offset="100%" stopColor="#94A3B8" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d="M 0,10 L 74,10 Q 90,10 90,26 L 88,44"
-                    stroke="url(#lineLithium)"
-                    strokeWidth="1.25"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
+                  <svg
+                    width="98"
+                    height="48"
+                    viewBox="0 0 98 48"
+                    fill="none"
+                    className="-ml-[1px] mt-7 overflow-visible"
+                  >
+                    <defs>
+                      <linearGradient id="lineLiquid" x1="0" y1="0" x2="98" y2="48" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="#262B33" stopOpacity="0.95" />
+                        <stop offset="72%" stopColor="#4A5568" stopOpacity="0.7" />
+                        <stop offset="100%" stopColor="#94A3B8" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M 0,10 L 74,10 Q 90,10 90,26 L 88,44"
+                      stroke="url(#lineLiquid)"
+                      strokeWidth="1.25"
+                      strokeLinecap="round"
+                      className="hero-pointer"
+                    />
+                    <circle cx="88" cy="44" r="2" className="hidden dark:block fill-white/50" />
+                  </svg>
+                </div>
+              )}
 
               {/* 2. MIDDLE-LEFT CALLOUT */}
-              <div className="absolute bottom-[132px] -left-[4px] sm:left-[0px] z-30 flex items-center pointer-events-none">
-                <div
-                  className="w-[160px] py-[16px] px-3.5 rounded-[18px] text-center backdrop-blur-md"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, rgba(238,242,247,0.92) 0%, rgba(229,234,242,0.88) 100%)",
-                    boxShadow:
-                      "0 10px 25px rgba(150,165,190,0.16), inset 0 1px 1px rgba(255,255,255,0.95)",
-                    border: "1px solid rgba(255,255,255,0.85)",
-                  }}
-                >
-                  <div className="text-[13px] font-semibold text-[#18181B] leading-tight">
-                    Zero-Glow Airflow
+              {hero?.callouts[1]?.title && (
+                <div className="absolute bottom-[132px] -left-[4px] sm:left-[0px] z-30 flex items-center pointer-events-none animate-in fade-in duration-500">
+                  <div className="hero-callout w-[170px] text-center">
+                    <div className="text-[13px] font-bold text-[#18181B] dark:text-white leading-tight">
+                      {hero.callouts[1].title}
+                    </div>
+                    <div className="text-[10px] font-medium text-[#64748B] dark:text-[#A1A1AA] mt-1 leading-tight">
+                      {hero.callouts[1].subtitle}
+                    </div>
                   </div>
-                  <div className="text-[9.5px] font-normal text-[#7B818E] mt-1.5 leading-tight">
-                    Silent Acoustic Architecture
-                  </div>
-                </div>
 
-                <svg
-                  width="155"
-                  height="95"
-                  viewBox="0 0 155 95"
-                  fill="none"
-                  className="-ml-[1px] -mt-5 overflow-visible"
-                >
-                  <defs>
-                    <linearGradient id="lineNoise" x1="0" y1="80" x2="150" y2="0" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#22262E" stopOpacity="0.95" />
-                      <stop offset="65%" stopColor="#4B5563" stopOpacity="0.65" />
-                      <stop offset="100%" stopColor="#94A3B8" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d="M 0,76 L 44,76 Q 50,76 55,72 L 146,6"
-                    stroke="url(#lineNoise)"
-                    strokeWidth="1.25"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
+                  <svg
+                    width="155"
+                    height="95"
+                    viewBox="0 0 155 95"
+                    fill="none"
+                    className="-ml-[1px] -mt-5 overflow-visible"
+                  >
+                    <defs>
+                      <linearGradient id="lineBattery" x1="0" y1="80" x2="150" y2="0" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="#22262E" stopOpacity="0.95" />
+                        <stop offset="65%" stopColor="#4B5563" stopOpacity="0.65" />
+                        <stop offset="100%" stopColor="#94A3B8" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M 0,76 L 44,76 Q 50,76 55,72 L 146,6"
+                      stroke="url(#lineBattery)"
+                      strokeWidth="1.25"
+                      strokeLinecap="round"
+                      className="hero-pointer"
+                    />
+                    <circle cx="146" cy="6" r="2" className="hidden dark:block fill-white/50" />
+                  </svg>
+                </div>
+              )}
 
               {/* 3. BOTTOM-RIGHT CALLOUT */}
-              <div className="absolute bottom-[36px] right-0 z-30 flex items-center pointer-events-none">
-                <svg
-                  width="68"
-                  height="96"
-                  viewBox="0 0 68 96"
-                  fill="none"
-                  className="-mr-[1px] -mt-8 overflow-visible"
-                >
-                  <defs>
-                    <linearGradient id="lineChipset" x1="68" y1="86" x2="4" y2="0" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#262B33" stopOpacity="0.95" />
-                      <stop offset="65%" stopColor="#525E70" stopOpacity="0.65" />
-                      <stop offset="100%" stopColor="#94A3B8" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d="M 68,84 L 36,84 Q 30,84 27,77 L 4,8"
-                    stroke="url(#lineChipset)"
-                    strokeWidth="1.25"
-                    strokeLinecap="round"
-                  />
-                </svg>
+              {hero?.callouts[2]?.title && (
+                <div className="absolute bottom-[36px] right-0 z-30 flex items-center pointer-events-none animate-in fade-in duration-500">
+                  <svg
+                    width="68"
+                    height="96"
+                    viewBox="0 0 68 96"
+                    fill="none"
+                    className="-mr-[1px] -mt-8 overflow-visible"
+                  >
+                    <defs>
+                      <linearGradient id="lineM4" x1="68" y1="86" x2="4" y2="0" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="#262B33" stopOpacity="0.95" />
+                        <stop offset="65%" stopColor="#525E70" stopOpacity="0.65" />
+                        <stop offset="100%" stopColor="#94A3B8" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M 68,84 L 36,84 Q 30,84 27,77 L 4,8"
+                      stroke="url(#lineM4)"
+                      strokeWidth="1.25"
+                      strokeLinecap="round"
+                      className="hero-pointer"
+                    />
+                    <circle cx="4" cy="8" r="2" className="hidden dark:block fill-white/50" />
+                  </svg>
 
-                <div
-                  className="w-[160px] py-[16px] px-3.5 rounded-[18px] text-center backdrop-blur-md"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, rgba(238,242,247,0.92) 0%, rgba(229,234,242,0.88) 100%)",
-                    boxShadow:
-                      "0 10px 25px rgba(150,165,190,0.16), inset 0 1px 1px rgba(255,255,255,0.95)",
-                    border: "1px solid rgba(255,255,255,0.85)",
-                  }}
-                >
-                  <div className="text-[13px] font-semibold text-[#18181B] leading-tight">
-                    RTX 4070 & Ryzen
-                  </div>
-                  <div className="text-[9.5px] font-normal text-[#7B818E] mt-1.5 leading-tight">
-                    Flagship Desktop Computing
+                  <div className="hero-callout w-[170px] text-center">
+                    <div className="text-[13px] font-bold text-[#18181B] dark:text-white leading-tight">
+                      {hero.callouts[2].title}
+                    </div>
+                    <div className="text-[10px] font-medium text-[#64748B] dark:text-[#A1A1AA] mt-1 leading-tight">
+                      {hero.callouts[2].subtitle}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </main>
 
@@ -878,54 +708,46 @@ export default function LandingPage() {
               4. BOTTOM 2 FEATURE CARDS ROW (Exact Reference UI Design)
              ============================================================ */}
           <section className="relative z-20 grid grid-cols-1 lg:grid-cols-2 gap-6 w-full mt-4">
-            {/* LEFT CARD: Materials (Exact Screenshot Match) */}
+            {/* LEFT CARD: Custom Upgrade (RAM & SSD NVMe) */}
             <div
-              className="h-auto sm:h-[196px] rounded-[28px] px-8 sm:px-9 py-6 flex flex-col sm:flex-row items-center justify-between relative overflow-hidden"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(234,239,246,0.92) 0%, rgba(238,242,248,0.86) 100%)",
-                boxShadow:
-                  "0 4px 24px rgba(165,180,205,0.12), inset 0 1px 1px rgba(255,255,255,0.9)",
-                border: "1px solid rgba(255,255,255,0.85)",
-              }}
+              onClick={() => setIsUpgradeModalOpen(true)}
+              className="h-auto sm:h-[196px] rounded-[28px] px-8 sm:px-9 py-6 flex flex-col sm:flex-row items-center justify-between relative overflow-hidden group cursor-pointer hover:shadow-lg transition-all duration-300 frost-card"
             >
-              <div className="max-w-[252px] z-10 text-left">
-                <h3 className="text-[27px] font-medium text-[#111111] tracking-[-0.02em] leading-tight mb-3">
-                  Materials
+              <div className="max-w-[260px] z-10 text-left">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/70 dark:bg-zinc-800 text-[10.5px] font-bold text-[#141414] dark:text-zinc-200 mb-2 border border-white/80">
+                  <Sparkles className="w-3 h-3 text-[#111111] dark:text-white" />
+                  <span>GARANSI TETAP AKTIF</span>
+                </div>
+                <h3 className="text-[26px] font-medium text-[#111111] tracking-[-0.02em] leading-tight mb-2">
+                  Custom Upgrade
                 </h3>
-                <p className="text-[13px] font-normal text-[#2D3138] leading-[1.48]">
-                  Seluruh sasis laptop dan casing PC menggunakan CNC titanium crystal & aerospace grade aluminum yang kokoh, dingin, dan bebas resonansi.
+                <p className="text-[12.5px] font-normal text-[#2D3138] leading-[1.48]">
+                  Tingkatkan kapasitas RAM DDR5 dan penyimpanan SSD NVMe langsung pada unit laptop pilihanmu tanpa menggugurkan garansi resmi.
                 </p>
               </div>
 
               <div className="flex items-center gap-4 sm:gap-5 mt-4 sm:mt-0 z-10">
-                <TitaniumCrystalGraphic />
+                <RamSsdHardwareGraphic />
 
                 <button
-                  onClick={() => setActiveModal("materials")}
-                  className="w-[56px] h-[56px] rounded-full bg-[#0C0C0C] text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shrink-0 cursor-pointer shadow-md"
-                  aria-label="Jelajahi Material"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsUpgradeModalOpen(true);
+                  }}
+                  className="w-[56px] h-[56px] rounded-full bg-[#0C0C0C] text-white flex items-center justify-center group-hover:scale-105 active:scale-95 transition-transform shrink-0 cursor-pointer shadow-md"
+                  aria-label="Buka Simulasi Custom Upgrade"
                 >
                   <ArrowUpRight className="w-[20px] h-[20px] stroke-[1.8] text-white" />
                 </button>
               </div>
             </div>
 
-            {/* RIGHT CARD: Ai Assistant (Exact Reference Match) */}
+            {/* RIGHT CARD: WhatsApp Consultation */}
             <div className="relative">
               <div
-                className="hidden lg:block absolute -bottom-[28px] right-[176px] w-[52px] h-[42px] rotate-[15.5deg] z-0 pointer-events-none"
-                style={{
-                  background:
-                    "linear-gradient(90deg, #6A7A90 0%, #98A8BE 25%, #C2D0E2 48%, #7E8EA4 76%, #526074 100%)",
-                  boxShadow: "4px 8px 18px rgba(90,110,140,0.25)",
-                }}
-              >
-                <div className="absolute inset-y-0 left-[38%] w-[2px] bg-[#2D3748]/70" />
-              </div>
-
-              <div
-                className="relative z-10 h-auto sm:h-[196px] rounded-[28px] px-8 sm:px-9 py-6 flex flex-col sm:flex-row items-center justify-between overflow-hidden backdrop-blur-md"
+                onClick={() => setActiveModal("ai")}
+                className="relative z-10 h-auto sm:h-[196px] rounded-[28px] px-8 sm:px-9 py-6 flex flex-col sm:flex-row items-center justify-between overflow-hidden backdrop-blur-md group cursor-pointer hover:shadow-lg transition-all duration-300"
                 style={{
                   background:
                     "linear-gradient(135deg, rgba(233,238,245,0.88) 0%, rgba(237,241,247,0.84) 100%)",
@@ -935,11 +757,15 @@ export default function LandingPage() {
                 }}
               >
                 <div className="max-w-[268px] z-10 text-left">
-                  <h3 className="text-[27px] font-medium text-[#111111] tracking-[-0.02em] leading-tight mb-3">
-                    Ai Assistant
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/70 dark:bg-zinc-800 text-[10.5px] font-bold text-[#141414] dark:text-zinc-200 mb-2 border border-white/80">
+                    <MessageCircle className="w-3 h-3 text-[#111111] dark:text-white" />
+                    <span>VIA WHATSAPP</span>
+                  </div>
+                  <h3 className="text-[26px] font-medium text-[#111111] tracking-[-0.02em] leading-tight mb-2">
+                    Konsultasi Gratis
                   </h3>
-                  <p className="text-[13px] font-normal text-[#2D3138] leading-[1.48]">
-                    Konsultasikan kebutuhan rakit PC, gaming, editing 4K, hingga kecocokan soket dan PSU secara cerdas dengan tim Alathea Comp.
+                  <p className="text-[12.5px] font-normal text-[#2D3138] leading-[1.48]">
+                    Konsultasikan spesifikasi laptop untuk kuliah, kerja, gaming, hingga editing 4K sesuai budget, langsung dengan tim Alathea Comp lewat WhatsApp.
                   </p>
                 </div>
 
@@ -947,8 +773,12 @@ export default function LandingPage() {
                   <AiOrbGraphic isListening={transportMode === "recording"} />
 
                   <button
-                    onClick={() => setActiveModal("ai")}
-                    className="w-[56px] h-[56px] rounded-full bg-[#0C0C0C] text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shrink-0 cursor-pointer shadow-md"
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveModal("ai");
+                    }}
+                    className="w-[56px] h-[56px] rounded-full bg-[#0C0C0C] text-white flex items-center justify-center group-hover:scale-105 active:scale-95 transition-transform shrink-0 cursor-pointer shadow-md"
                     aria-label="Konsultasi AI"
                   >
                     <ArrowUpRight className="w-[20px] h-[20px] stroke-[1.8] text-white" />
@@ -956,6 +786,7 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
+
           </section>
         </div>
 
@@ -974,26 +805,42 @@ export default function LandingPage() {
               </h2>
             </div>
 
-            {/* Quick Category Filters (Strict Monochrome) */}
+            {/* Quick Category Filters & Upgradable Toggle */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
               <button
-                onClick={() => setSelectedCategory("all")}
+                onClick={() => {
+                  setSelectedCategory("all");
+                  setShowOnlyUpgradable(false);
+                }}
                 className={`px-4 py-2 rounded-full text-xs font-semibold transition cursor-pointer shrink-0 ${
-                  selectedCategory === "all"
+                  selectedCategory === "all" && !showOnlyUpgradable
                     ? "bg-[#141414] dark:bg-white text-white dark:text-black shadow-sm"
-                    : "bg-[#F0F3F7] dark:bg-zinc-850 text-[#2D3138] dark:text-zinc-300 hover:bg-[#E2E7EE]"
+                    : "bg-[#F0F3F7] text-[#2D3138] hover:bg-[#E2E7EE]"
                 }`}
               >
                 Semua ({products.length})
               </button>
+
+              <button
+                onClick={() => setShowOnlyUpgradable(!showOnlyUpgradable)}
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                  showOnlyUpgradable
+                    ? "bg-[#141414] dark:bg-white text-white dark:text-black shadow-sm"
+                    : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 hover:bg-emerald-100"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Hanya Upgradable</span>
+              </button>
+
               {categories.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setSelectedCategory(c.slug)}
                   className={`px-4 py-2 rounded-full text-xs font-semibold transition cursor-pointer shrink-0 ${
-                    selectedCategory === c.slug
+                    selectedCategory === c.slug && !showOnlyUpgradable
                       ? "bg-[#141414] dark:bg-white text-white dark:text-black shadow-sm"
-                      : "bg-[#F0F3F7] dark:bg-zinc-850 text-[#2D3138] dark:text-zinc-300 hover:bg-[#E2E7EE]"
+                      : "bg-[#F0F3F7] text-[#2D3138] hover:bg-[#E2E7EE]"
                   }`}
                 >
                   {c.name}
@@ -1002,30 +849,79 @@ export default function LandingPage() {
             </div>
           </div>
 
+          {/* Active Custom Upgrade Simulation Banner */}
+          {appliedUpgradePlan && (appliedUpgradePlan.ram || appliedUpgradePlan.ssd) && (
+            <div className="p-4 rounded-2xl bg-[#EEF3F8] dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#141414] dark:bg-white text-white dark:text-black flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-[#111111] dark:text-white flex items-center gap-2">
+                    <span>Simulasi Custom Upgrade Diterapkan</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold">
+                      +{formatRupiah((appliedUpgradePlan.ram?.price || 0) + (appliedUpgradePlan.ssd?.price || 0))}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-[#676B74] dark:text-zinc-300 mt-0.5">
+                    {appliedUpgradePlan.ram ? `RAM: ${appliedUpgradePlan.ram.name}` : "RAM: Bawaan"}
+                    {" • "}
+                    {appliedUpgradePlan.ssd ? `SSD: ${appliedUpgradePlan.ssd.name}` : "SSD: Bawaan"}
+                    {" (Garansi Resmi 100% Tetap Aktif)"}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <button
+                  onClick={() => setIsUpgradeModalOpen(true)}
+                  className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800 text-[#141414] dark:text-white text-xs font-semibold border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 cursor-pointer shadow-xs"
+                >
+                  Ubah Paket
+                </button>
+                <button
+                  onClick={() => setAppliedUpgradePlan(null)}
+                  className="px-3 py-1.5 rounded-full text-zinc-500 hover:text-red-500 text-xs font-medium cursor-pointer"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Product Cards Grid (Matching the Materials Card Style) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredProducts.map((p) => {
               const discount = calculateDiscountPercentage(p.price, p.discount_price);
+              const isUpgradable = Boolean(p.is_ram_upgradable || p.is_ssd_upgradable);
+
+              const ramAdd = isUpgradable && appliedUpgradePlan?.ram ? appliedUpgradePlan.ram.price : 0;
+              const ssdAdd = isUpgradable && appliedUpgradePlan?.ssd ? appliedUpgradePlan.ssd.price : 0;
+              const totalUpgradeAdd = ramAdd + ssdAdd;
+
+              const basePrice = p.discount_price || p.price;
+              const finalCombinedPrice = basePrice + totalUpgradeAdd;
+
               return (
                 <div
                   key={p.id}
-                  className="rounded-[28px] p-5 flex flex-col justify-between group hover:-translate-y-1 transition-all duration-200"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, rgba(234,239,246,0.92) 0%, rgba(238,242,248,0.86) 100%)",
-                    boxShadow:
-                      "0 4px 24px rgba(165,180,205,0.12), inset 0 1px 1px rgba(255,255,255,0.9)",
-                    border: "1px solid rgba(255,255,255,0.85)",
-                  }}
+                  className="rounded-[28px] p-5 flex flex-col justify-between group hover:-translate-y-1 transition-all duration-200 frost-card"
                 >
                   <div>
-                    {/* Brand & Stock Badge (Monochrome) */}
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="px-2.5 py-0.5 rounded-full bg-white/80 dark:bg-zinc-800 text-[11px] font-semibold text-[#141414] dark:text-zinc-200 border border-white/60 dark:border-zinc-700">
-                        {p.brand}
-                      </span>
-                      <span className="px-2.5 py-0.5 rounded-full bg-white/80 dark:bg-zinc-800 text-[11px] font-medium text-[#141414] dark:text-zinc-200 border border-white/60 dark:border-zinc-700 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#141414] dark:bg-white" />
+                    {/* Brand & Stock & Upgradable Badge (Monochrome) */}
+                    <div className="flex items-center justify-between mb-3 flex-wrap gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2.5 py-0.5 rounded-full bg-white/80 dark:bg-zinc-800 text-[11px] font-semibold text-[#141414] dark:text-zinc-200 border border-white/60 dark:border-zinc-700">
+                          {p.brand}
+                        </span>
+                        {isUpgradable && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200/80 dark:border-emerald-800/80 flex items-center gap-1">
+                            <Sparkles className="w-2.5 h-2.5" /> Upgradable
+                          </span>
+                        )}
+                      </div>
+
+                      <span className={`px-2.5 py-0.5 rounded-full bg-white/80 dark:bg-zinc-800 text-[11px] font-medium border border-white/60 dark:border-zinc-700 flex items-center gap-1.5 ${getStockBadgeColors(p.stock_status)?.text ?? "text-[#141414] dark:text-zinc-200"}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${getStockBadgeColors(p.stock_status)?.dot ?? "bg-[#141414] dark:bg-white"}`} />
                         {p.stock_status === "available"
                           ? "Tersedia"
                           : p.stock_status === "pre_order"
@@ -1081,29 +977,62 @@ export default function LandingPage() {
 
                   {/* Price & Action */}
                   <div className="mt-4 pt-3 border-t border-zinc-200/60 dark:border-zinc-800">
-                    <div className="flex items-baseline gap-2 mb-3">
-                      <span className="font-mono text-base font-bold text-[#111111] dark:text-white">
-                        {formatRupiah(p.discount_price || p.price)}
-                      </span>
-                      {p.discount_price && (
-                        <span className="font-mono text-xs text-[#8D939E] line-through">
-                          {formatRupiah(p.price)}
+                    <div className="mb-3">
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-mono text-base font-bold text-[#111111] dark:text-white">
+                          {formatRupiah(finalCombinedPrice)}
+                        </span>
+                        {p.discount_price && totalUpgradeAdd === 0 && (
+                          <span className="font-mono text-xs text-[#8D939E] line-through">
+                            {formatRupiah(p.price)}
+                          </span>
+                        )}
+                      </div>
+                      {totalUpgradeAdd > 0 && (
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold block mt-0.5">
+                          Termasuk Custom Upgrade (+{formatRupiah(totalUpgradeAdd)})
                         </span>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-12 gap-2">
                       <Link
                         href={`/products/${p.slug}`}
-                        className="h-[38px] rounded-full border border-[#D0D5DD] dark:border-zinc-700 bg-white/80 dark:bg-zinc-800 hover:bg-white text-[#141414] dark:text-zinc-200 text-xs font-semibold flex items-center justify-center transition cursor-pointer"
+                        className="col-span-4 h-[38px] rounded-full border border-[#D0D5DD] dark:border-zinc-700 bg-white/80 dark:bg-zinc-800 hover:bg-white text-[#141414] dark:text-zinc-200 text-xs font-semibold flex items-center justify-center transition cursor-pointer"
                       >
                         Detail
                       </Link>
+                      <button
+                        type="button"
+                        disabled={p.stock_status === "out_of_stock"}
+                        onClick={() =>
+                          addToCart(
+                            p,
+                            1,
+                            isUpgradable && appliedUpgradePlan ? appliedUpgradePlan : undefined
+                          )
+                        }
+                        className="col-span-4 h-[38px] rounded-full border border-[#141414] dark:border-white bg-transparent hover:bg-[#141414] hover:text-white dark:hover:bg-white dark:hover:text-black text-[#141414] dark:text-white text-xs font-semibold flex items-center justify-center gap-1 transition cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+                        title={p.stock_status === "out_of_stock" ? "Stok habis" : "Tambah ke Keranjang"}
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>+Cart</span>
+                      </button>
                       <a
-                        href={generateWhatsAppLink(p)}
+                        href={
+                          p.stock_status === "out_of_stock"
+                            ? undefined
+                            : generateWhatsAppLink(
+                                p,
+                                undefined,
+                                isUpgradable && appliedUpgradePlan ? appliedUpgradePlan : undefined
+                              )
+                        }
+                        aria-disabled={p.stock_status === "out_of_stock"}
+                        title={p.stock_status === "out_of_stock" ? "Stok habis" : undefined}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="h-[38px] rounded-full bg-[#141414] dark:bg-white text-white dark:text-black hover:bg-[#262626] text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition"
+                        className="aria-disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none col-span-4 h-[38px] rounded-full bg-[#141414] dark:bg-white text-white dark:text-black hover:bg-[#262626] text-xs font-semibold flex items-center justify-center gap-1 shadow-sm transition"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
                         <span>Order</span>
@@ -1115,14 +1044,10 @@ export default function LandingPage() {
             })}
           </div>
 
+
           {filteredProducts.length === 0 && (
             <div
-              className="rounded-[28px] p-12 text-center"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(234,239,246,0.92) 0%, rgba(238,242,248,0.86) 100%)",
-                border: "1px solid rgba(255,255,255,0.85)",
-              }}
+              className="rounded-[28px] p-12 text-center frost-card"
             >
               <Package className="w-12 h-12 text-[#141414] dark:text-zinc-400 mx-auto mb-3" />
               <h4 className="font-bold text-base mb-1 text-[#111111] dark:text-white">Produk Tidak Ditemukan</h4>
@@ -1185,7 +1110,7 @@ export default function LandingPage() {
                       </span>
                     </div>
                     <a
-                      href={featuredProduct ? generateWhatsAppLink(featuredProduct) : "https://wa.me/6281234567890"}
+                      href={featuredProduct ? generateWhatsAppLink(featuredProduct) : `https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "6281280009848"}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-6 py-3 rounded-full bg-[#141414] dark:bg-zinc-100 text-white dark:text-black text-sm font-medium hover:bg-zinc-800 transition flex items-center gap-2 cursor-pointer"
@@ -1217,20 +1142,20 @@ export default function LandingPage() {
                 </div>
               )}
 
-              {/* AI Modal */}
+              {/* WhatsApp Consultation Modal */}
               {activeModal === "ai" && (
                 <div>
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EAEFF6] dark:bg-zinc-800 text-[#141414] dark:text-zinc-200 text-xs font-semibold mb-3">
-                    <Sparkles className="w-3.5 h-3.5 text-[#141414] dark:text-zinc-200" /> Rekomendasi Pintar
+                    <MessageCircle className="w-3.5 h-3.5 text-[#141414] dark:text-zinc-200" /> Konsultasi Gratis
                   </div>
                   <h4 className="text-2xl font-bold mb-2 text-[#111111] dark:text-white">
-                    Asisten Rakit PC & Hardware
+                    Konsultasi Laptop & Rakit PC
                   </h4>
                   <p className="text-sm text-[#676B74] dark:text-zinc-400 leading-relaxed mb-4">
                     Ingin merakit PC untuk rendering AutoCAD, Blender, atau gaming AAA di budget tertentu? Klik tombol di bawah untuk konsultasi langsung dengan teknisi spesialis kami via WhatsApp.
                   </p>
                   <a
-                    href="https://wa.me/6281234567890?text=Halo%20Admin%20Alathea%20Comp%2C%20saya%20ingin%20konsultasi%20spesifikasi%20PC%20rakitan."
+                    href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "6281280009848"}?text=Halo%20Admin%20Alathea%20Comp%2C%20saya%20ingin%20konsultasi%20spesifikasi%20PC%20rakitan.`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full py-3 rounded-full bg-[#141414] dark:bg-zinc-100 text-white dark:text-black text-sm font-medium cursor-pointer flex items-center justify-center gap-2"
@@ -1240,39 +1165,51 @@ export default function LandingPage() {
                 </div>
               )}
 
-              {/* Menu Modal */}
+              {/* Menu Modal (Navigasi Toko + Store Information) */}
               {activeModal === "menu" && (
-                <div>
-                  <h4 className="text-xl font-bold mb-4 text-[#111111] dark:text-white">Navigasi Toko</h4>
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => {
-                        setActiveModal(null);
-                        handleScrollToCatalog();
-                      }}
-                      className="w-full p-3 text-left rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold flex items-center justify-between text-[#111111] dark:text-white"
-                    >
-                      <span>Katalog Lengkap</span>
-                      <ArrowUpRight className="w-4 h-4 text-[#111111] dark:text-zinc-400" />
-                    </button>
-                    <Link
-                      href="/admin"
-                      className="w-full p-3 text-left rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold flex items-center justify-between text-[#111111] dark:text-white"
-                    >
-                      <span>Admin CMS Dashboard</span>
-                      <ArrowUpRight className="w-4 h-4 text-[#111111] dark:text-zinc-400" />
-                    </Link>
+                <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
+                  <div>
+                    <h4 className="text-xl font-bold mb-3 text-[#111111] dark:text-white">Navigasi Toko</h4>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          setActiveModal(null);
+                          handleScrollToCatalog();
+                        }}
+                        className="w-full p-3 text-left rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold flex items-center justify-between text-[#111111] dark:text-white transition cursor-pointer"
+                      >
+                        <span>Katalog Lengkap</span>
+                        <ArrowUpRight className="w-4 h-4 text-[#111111] dark:text-zinc-400" />
+                      </button>
+                      <Link
+                        href="/tentang"
+                        onClick={() => setActiveModal(null)}
+                        className="w-full p-3 text-left rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold flex items-center justify-between text-[#111111] dark:text-white transition cursor-pointer"
+                      >
+                        <span>Tentang Alathea Comp</span>
+                        <ArrowUpRight className="w-4 h-4 text-[#111111] dark:text-zinc-400" />
+                      </Link>
+                      <Link
+                        href="/admin"
+                        onClick={() => setActiveModal(null)}
+                        className="w-full p-3 text-left rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold flex items-center justify-between text-[#111111] dark:text-white transition cursor-pointer"
+                      >
+                        <span>Admin CMS Dashboard</span>
+                        <ArrowUpRight className="w-4 h-4 text-[#111111] dark:text-zinc-400" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Search Modal */}
+              {/* Search Modal with Quick Clear Button */}
               {activeModal === "search" && (
                 <div>
                   <h4 className="text-xl font-bold mb-3 text-[#111111] dark:text-white">Cari Produk Hardware</h4>
                   <div className="p-3 rounded-2xl bg-[#EEF2F6] dark:bg-zinc-800 flex items-center gap-2 mb-4 border border-zinc-200 dark:border-zinc-700">
-                    <Search className="w-4 h-4 text-[#111111] dark:text-zinc-400" />
+                    <Search className="w-4 h-4 text-[#111111] dark:text-zinc-400 shrink-0" />
                     <input
+                      ref={searchInputRef}
                       type="text"
                       placeholder="Cari laptop, GPU, PC rakitan..."
                       value={searchQuery}
@@ -1280,13 +1217,26 @@ export default function LandingPage() {
                       className="w-full bg-transparent text-sm outline-none text-[#111111] dark:text-white"
                       autoFocus
                     />
+                    {searchQuery.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery("");
+                          searchInputRef.current?.focus();
+                        }}
+                        className="w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 dark:hover:bg-zinc-600 flex items-center justify-center text-zinc-700 dark:text-zinc-200 transition cursor-pointer shrink-0"
+                        title="Hapus pencarian"
+                      >
+                        <X className="w-3 h-3 stroke-[2.2]" />
+                      </button>
+                    )}
                   </div>
                   <button
                     onClick={() => {
                       setActiveModal(null);
                       handleScrollToCatalog();
                     }}
-                    className="w-full py-2.5 rounded-full bg-[#111111] dark:bg-zinc-100 text-white dark:text-black text-xs font-semibold cursor-pointer"
+                    className="w-full py-2.5 rounded-full bg-[#111111] dark:bg-zinc-100 text-white dark:text-black text-xs font-semibold cursor-pointer shadow-xs"
                   >
                     Tampilkan Hasil Pencarian
                   </button>
@@ -1301,7 +1251,7 @@ export default function LandingPage() {
                     Layanan pelanggan dan tim teknisi kami siap membantu setiap hari kerja (09.00 - 21.00 WIB).
                   </p>
                   <a
-                    href="https://wa.me/6281234567890?text=Halo%20Admin%20Alathea%20Comp%2C%20saya%20ingin%20bertanya%20mengenai%20produk."
+                    href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "6281280009848"}?text=Halo%20Admin%20Alathea%20Comp%2C%20saya%20ingin%20bertanya%20mengenai%20produk.`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full py-3 rounded-full bg-[#141414] dark:bg-zinc-100 text-white dark:text-black text-sm font-medium flex items-center justify-center gap-2"
@@ -1380,14 +1330,36 @@ export default function LandingPage() {
                 <div>
                   <span className="text-xs text-[#8D939E] block">Harga</span>
                   <span className="text-xl sm:text-2xl font-bold font-mono text-[#111111] dark:text-white">
-                    {formatRupiah(selectedProduct.discount_price || selectedProduct.price)}
+                    {formatRupiah(
+                      (selectedProduct.discount_price || selectedProduct.price) +
+                        (appliedUpgradePlan && (selectedProduct.is_ram_upgradable || selectedProduct.is_ssd_upgradable)
+                          ? (selectedProduct.is_ram_upgradable && appliedUpgradePlan.ram ? appliedUpgradePlan.ram.price : 0) +
+                            (selectedProduct.is_ssd_upgradable && appliedUpgradePlan.ssd ? appliedUpgradePlan.ssd.price : 0)
+                          : 0)
+                    )}
                   </span>
+                  {appliedUpgradePlan && (selectedProduct.is_ram_upgradable || selectedProduct.is_ssd_upgradable) && (
+                    <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-semibold block">
+                      (Termasuk Custom Upgrade Terpilih)
+                    </span>
+                  )}
                 </div>
                 <a
-                  href={generateWhatsAppLink(selectedProduct)}
+                  href={
+                    selectedProduct.stock_status === "out_of_stock"
+                      ? undefined
+                      : generateWhatsAppLink(
+                          selectedProduct,
+                          undefined,
+                          selectedProduct.is_ram_upgradable || selectedProduct.is_ssd_upgradable
+                            ? appliedUpgradePlan || undefined
+                            : undefined
+                        )
+                  }
+                  aria-disabled={selectedProduct.stock_status === "out_of_stock"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-2.5 rounded-full bg-[#141414] dark:bg-white text-white dark:text-black font-semibold text-xs flex items-center gap-2 shadow"
+                  className="aria-disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none px-6 py-2.5 rounded-full bg-[#141414] dark:bg-white text-white dark:text-black font-semibold text-xs flex items-center gap-2 shadow"
                 >
                   <MessageCircle className="w-4 h-4 text-white dark:text-black" />
                   <span>Order Sekarang</span>
@@ -1396,7 +1368,21 @@ export default function LandingPage() {
             </div>
           </div>
         )}
+
+        {/* Custom Upgrade Simulation Modal */}
+        <CustomUpgradeModal
+          isOpen={isUpgradeModalOpen}
+          onClose={() => setIsUpgradeModalOpen(false)}
+          onApplyUpgrade={(plan) => {
+            setAppliedUpgradePlan(plan);
+            if (plan.ram || plan.ssd) {
+              setShowOnlyUpgradable(true);
+            }
+          }}
+          currentPlan={appliedUpgradePlan || undefined}
+        />
       </div>
     </div>
   );
 }
+

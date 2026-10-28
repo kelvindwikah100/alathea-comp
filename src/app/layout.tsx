@@ -3,11 +3,44 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { CompareProvider } from "@/context/compare-context";
+import { CartProvider } from "@/context/cart-context";
+import { CartDrawer } from "@/components/cart/cart-drawer";
 
 export const metadata: Metadata = {
-  title: "Alathea Comp — Modern Computer & IT Hardware Catalog",
+  title: {
+    default: "Alathea Comp — Katalog Komputer, Laptop & Rakit PC Modern",
+    template: "%s | Alathea Comp",
+  },
   description:
-    "Katalog modern perangkat keras komputer, laptop, komponen PC, dan aksesoris IT berkualitas tinggi.",
+    "Katalog modern perangkat keras komputer, laptop gaming, komponen PC rakitan, monitor, dan aksesoris IT berkualitas tinggi dengan konsultasi WhatsApp langsung.",
+  keywords: [
+    "Alathea Comp",
+    "katalog komputer",
+    "laptop gaming",
+    "rakit PC",
+    "komponen PC",
+    "GPU",
+    "prosesor",
+    "monitor gaming",
+    "hardware IT",
+  ],
+  authors: [{ name: "Alathea Comp" }],
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    url: "https://alatheacomp.id",
+    siteName: "Alathea Comp",
+    title: "Alathea Comp — Katalog Komputer, Laptop & Rakit PC Modern",
+    description:
+      "Katalog modern perangkat keras komputer, laptop, komponen PC, dan aksesoris IT berkualitas tinggi dengan konsultasi WhatsApp langsung.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Alathea Comp — Katalog Komputer, Laptop & Rakit PC Modern",
+    description:
+      "Katalog modern perangkat keras komputer, laptop, komponen PC, dan aksesoris IT berkualitas tinggi.",
+  },
 };
 
 export default function RootLayout({
@@ -28,8 +61,13 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <TooltipProvider>
-            {children}
-            <Toaster position="top-right" richColors />
+            <CompareProvider>
+              <CartProvider>
+                {children}
+                <CartDrawer />
+                <Toaster position="top-right" richColors />
+              </CartProvider>
+            </CompareProvider>
           </TooltipProvider>
         </ThemeProvider>
       </body>

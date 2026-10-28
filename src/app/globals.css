@@ -2,7 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/* Light cards (.frost-card) keep their light styling, so dark: utilities are skipped inside them. */
+@custom-variant dark (&:is(.dark *):not(.frost-card, .frost-card *));
 
 @theme inline {
   --color-background: var(--background);
@@ -150,6 +151,49 @@
 /* ============================================================================
    TACTILE CLAYMORPHISM & GLASSMORPHISM DESIGN SYSTEM (STRICTLY NO GLOW)
    ============================================================================ */
+
+/* Hero floating feature badges + pointer lines.
+   Light mode keeps the frosted look; dark mode becomes glass on the #0b0d10 background. */
+@layer components {
+  .hero-callout {
+    padding: 14px 14px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(238, 242, 247, 0.94) 0%, rgba(229, 234, 242, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 10px 25px rgba(150, 165, 190, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .dark .hero-callout {
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .dark .hero-pointer {
+    stroke: rgba(255, 255, 255, 0.2);
+    stroke-width: 1px;
+  }
+}
+
+/* Frosted card used for product/catalog cards. In a layer so utilities can override. */
+@layer components {
+  .frost-card {
+    background: linear-gradient(135deg, rgba(234, 239, 246, 0.92) 0%, rgba(238, 242, 248, 0.86) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 4px 24px rgba(165, 180, 205, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  }
+
+  /* Card stays light in dark mode; only the inherited text color needs to stay dark. */
+  .dark .frost-card {
+    color: #111111;
+  }
+}
 
 .clay-card {
   background-color: #F8F9FB;

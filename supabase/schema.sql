@@ -35,6 +35,20 @@ CREATE TABLE IF NOT EXISTS public.products (
     description TEXT,
     specifications JSONB NOT NULL DEFAULT '[]'::jsonb,
     images TEXT[] NOT NULL DEFAULT '{}',
+    is_ram_upgradable BOOLEAN NOT NULL DEFAULT FALSE,
+    is_ssd_upgradable BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Table: custom_upgrades
+CREATE TABLE IF NOT EXISTS public.custom_upgrades (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    category TEXT NOT NULL CHECK (category IN ('RAM', 'SSD')),
+    name TEXT NOT NULL,
+    specs TEXT NOT NULL,
+    price NUMERIC(15, 2) NOT NULL CHECK (price >= 0),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -61,6 +75,12 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS set_products_updated_at ON public.products;
 CREATE TRIGGER set_products_updated_at
     BEFORE UPDATE ON public.products
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_updated_at();
+
+DROP TRIGGER IF EXISTS set_custom_upgrades_updated_at ON public.custom_upgrades;
+CREATE TRIGGER set_custom_upgrades_updated_at
+    BEFORE UPDATE ON public.custom_upgrades
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_updated_at();
 
@@ -130,6 +150,156 @@ CREATE POLICY "Authenticated users can delete products"
     FOR DELETE
     TO authenticated
     USING (true);
+
+-- Custom Upgrades Policies: Everyone can view, only authenticated Admin can mutate
+ALTER TABLE public.custom_upgrades ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public can read custom_upgrades" ON public.custom_upgrades;
+CREATE POLICY "Public can read custom_upgrades"
+    ON public.custom_upgrades
+    FOR SELECT
+    TO public
+    USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert custom_upgrades" ON public.custom_upgrades;
+CREATE POLICY "Authenticated users can insert custom_upgrades"
+    ON public.custom_upgrades
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Authenticated users can update custom_upgrades" ON public.custom_upgrades;
+CREATE POLICY "Authenticated users can update custom_upgrades"
+    ON public.custom_upgrades
+    FOR UPDATE
+    TO authenticated
+    USING (true)
+    WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Authenticated users can delete custom_upgrades" ON public.custom_upgrades;
+CREATE POLICY "Authenticated users can delete custom_upgrades"
+    ON public.custom_upgrades
+    FOR DELETE
+    TO authenticated
+    USING (true);
+
+-- ============================================================================
+-- 4b. STORE INFO (single row, edited from Admin > Tentang Toko)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.store_info (
+    id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    highlights JSONB NOT NULL DEFAULT '[]'::jsonb,
+    weekday_hours TEXT NOT NULL,
+    weekend_hours TEXT NOT NULL,
+    address TEXT NOT NULL,
+    whatsapp_number TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+DROP TRIGGER IF EXISTS set_store_info_updated_at ON public.store_info;
+CREATE TRIGGER set_store_info_updated_at
+    BEFORE UPDATE ON public.store_info
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_updated_at();
+
+ALTER TABLE public.store_info ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public can read store_info" ON public.store_info;
+CREATE POLICY "Public can read store_info"
+    ON public.store_info
+    FOR SELECT
+    TO public
+    USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert store_info" ON public.store_info;
+CREATE POLICY "Authenticated users can insert store_info"
+    ON public.store_info
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Authenticated users can update store_info" ON public.store_info;
+CREATE POLICY "Authenticated users can update store_info"
+    ON public.store_info
+    FOR UPDATE
+    TO authenticated
+    USING (true)
+    WITH CHECK (true);
+
+INSERT INTO public.store_info (id, name, description, highlights, weekday_hours, weekend_hours, address, whatsapp_number)
+VALUES (
+    1,
+    'Alathea Comp',
+    'Pusat katalog laptop resmi, MacBook, dan perangkat hardware terkurasi dengan jaminan 100% garansi resmi serta layanan Custom Upgrade profesional.',
+    '[
+      {"title": "Katalog Terkurasi", "text": "Laptop resmi, MacBook, dan perangkat hardware pilihan yang sudah kami seleksi kualitasnya."},
+      {"title": "100% Garansi Resmi", "text": "Setiap unit dilengkapi garansi resmi distributor, dan kami bantu proses klaimnya."},
+      {"title": "Custom Upgrade", "text": "Upgrade RAM, SSD, hingga rakit PC oleh teknisi berpengalaman sesuai kebutuhan kerja Anda."}
+    ]'::jsonb,
+    '09.00 – 21.00 WIB',
+    '10.00 – 18.00 WIB',
+    'Jl. Raya Teknologi No. 88, Jakarta (Alathea Store)',
+    '6281234567890'
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================================
+-- 4c. HOMEPAGE HERO (single row, edited from Admin > Tampilan Beranda)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.homepage_hero (
+    id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    image_url TEXT NOT NULL,
+    image_alt TEXT NOT NULL,
+    callouts JSONB NOT NULL DEFAULT '[]'::jsonb,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+DROP TRIGGER IF EXISTS set_homepage_hero_updated_at ON public.homepage_hero;
+CREATE TRIGGER set_homepage_hero_updated_at
+    BEFORE UPDATE ON public.homepage_hero
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_updated_at();
+
+ALTER TABLE public.homepage_hero ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public can read homepage_hero" ON public.homepage_hero;
+CREATE POLICY "Public can read homepage_hero"
+    ON public.homepage_hero
+    FOR SELECT
+    TO public
+    USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert homepage_hero" ON public.homepage_hero;
+CREATE POLICY "Authenticated users can insert homepage_hero"
+    ON public.homepage_hero
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Authenticated users can update homepage_hero" ON public.homepage_hero;
+CREATE POLICY "Authenticated users can update homepage_hero"
+    ON public.homepage_hero
+    FOR UPDATE
+    TO authenticated
+    USING (true)
+    WITH CHECK (true);
+
+INSERT INTO public.homepage_hero (id, image_url, image_alt, callouts)
+VALUES (
+    1,
+    'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1200&q=85',
+    'Laptop unggulan Alathea Comp',
+    '[
+      {"title": "Liquid Retina XDR", "subtitle": "120Hz ProMotion & 1000 Nits Display"},
+      {"title": "22-Hour Battery Life", "subtitle": "Silent Thermal & All-Day Efficiency"},
+      {"title": "Apple M4 Max Chip", "subtitle": "Flagship Pro Laptop Computing"}
+    ]'::jsonb
+)
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
 -- 5. SUPABASE STORAGE BUCKET & STORAGE RLS POLICIES (`product-images`)
@@ -407,3 +577,13 @@ VALUES
     ]
 )
 ON CONFLICT (slug) DO NOTHING;
+
+-- Seed Data: Custom Upgrades (RAM & SSD)
+INSERT INTO public.custom_upgrades (category, name, specs, price, is_active)
+VALUES
+    ('RAM', '+8GB DDR5 5600MHz', 'SO-DIMM DDR5 5600MHz (Single Rank)', 550000, true),
+    ('RAM', '+16GB DDR5 5600MHz', 'SO-DIMM DDR5 5600MHz (Dual Rank)', 1050000, true),
+    ('RAM', '+32GB DDR5 5600MHz', 'SO-DIMM DDR5 5600MHz (Kit 2x16GB)', 1950000, true),
+    ('SSD', '+512GB SSD NVMe Gen 4', 'M.2 2280 PCIe 4.0 x4 (Up to 5000 MB/s)', 650000, true),
+    ('SSD', '+1TB SSD NVMe Gen 4', 'M.2 2280 PCIe 4.0 x4 (Up to 7000 MB/s)', 1200000, true),
+    ('SSD', '+2TB SSD NVMe Gen 4', 'M.2 2280 PCIe 4.0 x4 (Up to 7400 MB/s)', 2300000, true);

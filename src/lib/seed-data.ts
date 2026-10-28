@@ -1,4 +1,4 @@
-import { Category, Product } from "@/types/database";
+import { Category, HomepageHero, Product, StoreInfo, UpgradeOption } from "@/types/database";
 
 export const INITIAL_CATEGORIES: Category[] = [
   {
@@ -70,6 +70,8 @@ export const INITIAL_PRODUCTS: Product[] = [
       "https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&w=1200&q=80",
     ],
+    is_ram_upgradable: false,
+    is_ssd_upgradable: true,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
   },
@@ -97,6 +99,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     images: [
       "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=1200&q=80",
     ],
+    is_ram_upgradable: true,
+    is_ssd_upgradable: true,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
   },
@@ -126,6 +130,8 @@ export const INITIAL_PRODUCTS: Product[] = [
       "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?auto=format&fit=crop&w=1200&q=80",
     ],
+    is_ram_upgradable: true,
+    is_ssd_upgradable: true,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
   },
@@ -153,6 +159,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     images: [
       "https://images.unsplash.com/photo-1547082299-de196ea013d6?auto=format&fit=crop&w=1200&q=80",
     ],
+    is_ram_upgradable: true,
+    is_ssd_upgradable: true,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
   },
@@ -263,3 +271,98 @@ export const INITIAL_PRODUCTS: Product[] = [
     updated_at: "2026-01-01T00:00:00.000Z",
   },
 ];
+
+export const INITIAL_UPGRADE_OPTIONS: UpgradeOption[] = [
+  {
+    id: "u1000000-0000-0000-0000-000000000001",
+    category: "RAM",
+    name: "+8GB DDR5 5600MHz",
+    slot_type: "SO-DIMM DDR5",
+    price: 550000,
+    is_active: true,
+    created_at: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "u1000000-0000-0000-0000-000000000002",
+    category: "RAM",
+    name: "+16GB DDR5 5600MHz",
+    slot_type: "SO-DIMM DDR5",
+    price: 1050000,
+    is_active: true,
+    created_at: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "u1000000-0000-0000-0000-000000000003",
+    category: "RAM",
+    name: "+32GB DDR5 5600MHz",
+    slot_type: "SO-DIMM DDR5",
+    price: 1950000,
+    is_active: true,
+    created_at: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "u1000000-0000-0000-0000-000000000004",
+    category: "SSD",
+    name: "+512GB SSD NVMe Gen 4",
+    slot_type: "M.2 NVMe PCIe 4.0",
+    price: 650000,
+    is_active: true,
+    created_at: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "u1000000-0000-0000-0000-000000000005",
+    category: "SSD",
+    name: "+1TB SSD NVMe Gen 4",
+    slot_type: "M.2 NVMe PCIe 4.0",
+    price: 1200000,
+    is_active: true,
+    created_at: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "u1000000-0000-0000-0000-000000000006",
+    category: "SSD",
+    name: "+2TB SSD NVMe Gen 4",
+    slot_type: "M.2 NVMe PCIe 4.0",
+    price: 2300000,
+    is_active: true,
+    created_at: "2026-01-01T00:00:00.000Z",
+  },
+];
+
+
+export const INITIAL_STORE_INFO: StoreInfo = {
+  id: 1,
+  name: "Alathea Comp",
+  description:
+    "Pusat katalog laptop resmi, MacBook, dan perangkat hardware terkurasi dengan jaminan 100% garansi resmi serta layanan Custom Upgrade profesional.",
+  highlights: [
+    {
+      title: "Katalog Terkurasi",
+      text: "Laptop resmi, MacBook, dan perangkat hardware pilihan yang sudah kami seleksi kualitasnya.",
+    },
+    {
+      title: "100% Garansi Resmi",
+      text: "Setiap unit dilengkapi garansi resmi distributor, dan kami bantu proses klaimnya.",
+    },
+    {
+      title: "Custom Upgrade",
+      text: "Upgrade RAM, SSD, hingga rakit PC oleh teknisi berpengalaman sesuai kebutuhan kerja Anda.",
+    },
+  ],
+  weekday_hours: "09.00 – 21.00 WIB",
+  weekend_hours: "10.00 – 18.00 WIB",
+  address: "Jl. Raya Teknologi No. 88, Jakarta (Alathea Store)",
+  whatsapp_number: "6281280009848",
+};
+
+export const INITIAL_HOMEPAGE_HERO: HomepageHero = {
+  id: 1,
+  image_url:
+    "https://bhhnydemuntvlpwojnfd.supabase.co/storage/v1/object/public/product-images/homepage/1792864989581-x3kuhrp.png",
+  image_alt: "Laptop unggulan Alathea Comp",
+  callouts: [
+    { title: "Liquid Retina XDR", subtitle: "120Hz ProMotion & 1000 Nits Display" },
+    { title: "22-Hour Battery Life", subtitle: "Silent Thermal & All-Day Efficiency" },
+    { title: "Apple M4 Max Chip", subtitle: "Flagship Pro Laptop Computing" },
+  ],
+};
