@@ -1076,7 +1076,12 @@ function getLocalHomepageHero(): HomepageHero {
         if (!parsed.image_url || parsed.image_url.includes("images.unsplash.com")) {
           parsed.image_url = INITIAL_HOMEPAGE_HERO.image_url;
         }
-        return { ...INITIAL_HOMEPAGE_HERO, ...parsed };
+        return {
+          ...INITIAL_HOMEPAGE_HERO,
+          ...parsed,
+          product_url: parsed.product_url !== undefined ? parsed.product_url : INITIAL_HOMEPAGE_HERO.product_url,
+          product_slug: parsed.product_slug !== undefined ? parsed.product_slug : INITIAL_HOMEPAGE_HERO.product_slug,
+        };
       }
     } catch {
       // ignore parse error
@@ -1089,6 +1094,7 @@ function getLocalHomepageHero(): HomepageHero {
  * Fetch the homepage hero image and floating labels
  */
 export async function getHomepageHero(): Promise<HomepageHero> {
+  const local = getLocalHomepageHero();
   const supabase = await getSupabaseClient();
   if (supabase) {
     try {
@@ -1099,7 +1105,19 @@ export async function getHomepageHero(): Promise<HomepageHero> {
         .maybeSingle();
 
       if (!error && data) {
-        return { ...INITIAL_HOMEPAGE_HERO, ...data } as HomepageHero;
+        return {
+          ...INITIAL_HOMEPAGE_HERO,
+          ...local,
+          ...data,
+          product_url:
+            data.product_url !== undefined && data.product_url !== null
+              ? data.product_url
+              : local.product_url || INITIAL_HOMEPAGE_HERO.product_url,
+          product_slug:
+            data.product_slug !== undefined && data.product_slug !== null
+              ? data.product_slug
+              : local.product_slug || INITIAL_HOMEPAGE_HERO.product_slug,
+        } as HomepageHero;
       }
       if (error) {
         console.warn("Supabase homepage_hero query error, using fallback:", error.message);
@@ -1109,7 +1127,7 @@ export async function getHomepageHero(): Promise<HomepageHero> {
     }
   }
 
-  return getLocalHomepageHero();
+  return local;
 }
 
 /**
@@ -1126,6 +1144,9 @@ export async function updateHomepageHero(data: HomepageHeroFormData): Promise<Ho
       );
     }
 
+    let savedData: HomepageHero | null = null;
+
+    // Try upsert with all properties
     const { data: saved, error } = await supabase
       .from("homepage_hero")
       .upsert({ id: 1, ...data, updated_at: new Date().toISOString() })
@@ -1133,13 +1154,35 @@ export async function updateHomepageHero(data: HomepageHeroFormData): Promise<Ho
       .single();
 
     if (error) {
-      throw new Error(
-        error.code === "42501"
-          ? "Akses ditolak database. Pastikan Anda login sebagai admin Supabase."
-          : error.message
-      );
+      // If column product_url or product_slug does not exist yet on Supabase table
+      if (error.message?.includes("column") && error.message?.includes("does not exist")) {
+        const { product_url, product_slug, ...safeData } = data as Record<string, unknown>;
+        const retry = await supabase
+          .from("homepage_hero")
+          .upsert({ id: 1, ...safeData, updated_at: new Date().toISOString() })
+          .select("*")
+          .single();
+        if (retry.error) {
+          throw new Error(retry.error.message);
+        }
+        savedData = { ...(retry.data as HomepageHero), product_url: product_url as string, product_slug: product_slug as string };
+      } else {
+        throw new Error(
+          error.code === "42501"
+            ? "Akses ditolak database. Pastikan Anda login sebagai admin Supabase."
+            : error.message
+        );
+      }
+    } else {
+      savedData = saved as HomepageHero;
     }
-    return saved as HomepageHero;
+
+    // Always mirror to localStorage for instantaneous offline/client reliability
+    if (typeof window !== "undefined" && savedData) {
+      localStorage.setItem(LOCAL_STORAGE_HERO_KEY, JSON.stringify(savedData));
+    }
+
+    return savedData as HomepageHero;
   }
 
   const saved: HomepageHero = { id: 1, ...data, updated_at: new Date().toISOString() };

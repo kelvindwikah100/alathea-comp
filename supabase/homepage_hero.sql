@@ -18,8 +18,13 @@ CREATE TABLE IF NOT EXISTS public.homepage_hero (
     image_url TEXT NOT NULL,
     image_alt TEXT NOT NULL,
     callouts JSONB NOT NULL DEFAULT '[]'::jsonb,
+    product_url TEXT,
+    product_slug TEXT,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE public.homepage_hero ADD COLUMN IF NOT EXISTS product_url TEXT;
+ALTER TABLE public.homepage_hero ADD COLUMN IF NOT EXISTS product_slug TEXT;
 
 DROP TRIGGER IF EXISTS set_homepage_hero_updated_at ON public.homepage_hero;
 CREATE TRIGGER set_homepage_hero_updated_at

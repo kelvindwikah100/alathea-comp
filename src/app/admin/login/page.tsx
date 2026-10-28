@@ -155,7 +155,7 @@ export default function AdminLoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@alatheacomp.id"
+                  placeholder="Email"
                   className="pl-10 h-11 clay-inset rounded-xl bg-neutral-100/80 dark:bg-neutral-900/80 border-neutral-300/80 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus-visible:ring-1 focus-visible:ring-neutral-400 dark:focus-visible:ring-neutral-600"
                   disabled={isLoading}
                   {...register("email")}
@@ -198,7 +198,7 @@ export default function AdminLoginPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••••••"
+                  placeholder="Password"
                   className="pl-10 pr-10 h-11 clay-inset rounded-xl bg-neutral-100/80 dark:bg-neutral-900/80 border-neutral-300/80 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus-visible:ring-1 focus-visible:ring-neutral-400 dark:focus-visible:ring-neutral-600"
                   disabled={isLoading}
                   {...register("password")}

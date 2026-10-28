@@ -115,6 +115,8 @@ export type StoreInfoFormValues = z.infer<typeof storeInfoSchema>;
 export const homepageHeroSchema = z.object({
   image_url: z.string().trim().min(1, "Gambar wajib diisi"),
   image_alt: z.string().trim().min(3, "Deskripsi gambar minimal 3 karakter"),
+  product_url: z.string().trim().optional(),
+  product_slug: z.string().trim().optional(),
   // Exactly 3 labels (fixed positions on the hero). Empty title hides that label.
   callouts: z
     .array(

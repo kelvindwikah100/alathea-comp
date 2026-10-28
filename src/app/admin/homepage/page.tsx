@@ -14,16 +14,18 @@ import {
   MonitorSmartphone,
   RefreshCw,
   Save,
+  ShoppingBag,
   Upload,
 } from "lucide-react";
 import {
   getHomepageHero,
+  getProducts,
   updateHomepageHero,
   uploadProductImage,
 } from "@/lib/services/catalog";
 import { homepageHeroSchema, HomepageHeroFormValues } from "@/lib/validations/schemas";
 import { INITIAL_HOMEPAGE_HERO } from "@/lib/seed-data";
-import { HomepageHero } from "@/types/database";
+import { HomepageHero, Product } from "@/types/database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,13 +47,20 @@ function toFormValues(hero: HomepageHero): HomepageHeroFormValues {
     title: hero.callouts[i]?.title ?? "",
     subtitle: hero.callouts[i]?.subtitle ?? "",
   }));
-  return { image_url: hero.image_url, image_alt: hero.image_alt, callouts };
+  return {
+    image_url: hero.image_url,
+    image_alt: hero.image_alt,
+    product_url: hero.product_url ?? "",
+    product_slug: hero.product_slug ?? "",
+    callouts,
+  };
 }
 
 export default function AdminHomepagePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [productsList, setProductsList] = useState<Product[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -68,10 +77,14 @@ export default function AdminHomepagePage() {
 
   const imageUrl = watch("image_url");
   const imageAlt = watch("image_alt");
+  const productSlug = watch("product_slug");
+  const productUrl = watch("product_url");
 
   const loadHero = async () => {
     try {
-      reset(toFormValues(await getHomepageHero()));
+      const [heroData, prods] = await Promise.all([getHomepageHero(), getProducts()]);
+      setProductsList(prods);
+      reset(toFormValues(heroData));
     } catch (err) {
       console.error(err);
       toast.error("Gagal Memuat Data", { description: "Tidak dapat memuat tampilan beranda." });
@@ -230,6 +243,91 @@ export default function AdminHomepagePage() {
               className={inputClass}
             />
             <FieldError message={errors.image_alt?.message} />
+          </div>
+
+          {/* Product Link / Buy Now Target */}
+          <div className="pt-3 border-t border-neutral-200/80 dark:border-neutral-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-bold flex items-center gap-1.5 text-neutral-900 dark:text-neutral-100">
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>Produk Terkait & Tautan Tombol &ldquo;Buy Now&rdquo;</span>
+              </Label>
+              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                Otomatis Masuk Keranjang
+              </span>
+            </div>
+            <p className="text-[11px] text-neutral-500 leading-relaxed">
+              Pilih produk dari katalog agar saat pengunjung mengklik tombol <strong>Buy Now</strong> di beranda, laptop/produk tersebut langsung dibeli dan masuk ke keranjang belanja.
+            </p>
+
+            {/* Quick dropdown */}
+            <div className="space-y-1">
+              <Label className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400">Pilih Cepat dari Katalog Produk</Label>
+              <select
+                value={productSlug || ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const matched = productsList.find((p) => p.slug === val || p.id === val);
+                  if (matched) {
+                    setValue("product_slug", matched.slug, { shouldDirty: true, shouldValidate: true });
+                    setValue("product_url", `/products/${matched.slug}`, { shouldDirty: true, shouldValidate: true });
+                    if (!imageAlt) {
+                      setValue("image_alt", matched.name, { shouldDirty: true });
+                    }
+                  } else if (!val) {
+                    setValue("product_slug", "", { shouldDirty: true });
+                    setValue("product_url", "", { shouldDirty: true });
+                  }
+                }}
+                className="w-full rounded-xl h-10 text-xs bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 px-3 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              >
+                <option value="">-- Pilih Produk Laptop / Komponen --</option>
+                {productsList.map((p) => (
+                  <option key={p.id} value={p.slug}>
+                    {p.brand} - {p.name} ({new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(p.discount_price || p.price)})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Slug & URL inputs */}
+            <div className="grid sm:grid-cols-2 gap-2.5 pt-1">
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400">Slug Produk</Label>
+                <Input
+                  {...register("product_slug")}
+                  placeholder="Contoh: apple-macbook-pro-16-m4-max"
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400">Link URL Produk</Label>
+                <Input
+                  {...register("product_url")}
+                  placeholder="Contoh: /products/apple-macbook-pro-16-m4-max"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+
+            {/* Active product link preview */}
+            {productSlug && (
+              <div className="p-2.5 rounded-xl bg-neutral-100/70 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs">
+                <span className="text-neutral-700 dark:text-neutral-300 truncate">
+                  Target Buy Now: <strong className="font-mono text-neutral-900 dark:text-neutral-100">{productSlug}</strong>
+                </span>
+                {productUrl && (
+                  <Link
+                    href={productUrl}
+                    target="_blank"
+                    className="inline-flex items-center gap-1 text-[11px] text-sky-600 dark:text-sky-400 hover:underline shrink-0 ml-2"
+                  >
+                    <span>Cek Link</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
         </section>
 

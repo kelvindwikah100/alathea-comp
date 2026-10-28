@@ -136,6 +136,8 @@ export interface HomepageHero {
   image_url: string;
   image_alt: string;
   callouts: HeroCallout[];
+  product_url?: string;
+  product_slug?: string;
   updated_at?: string;
 }
 

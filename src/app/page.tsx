@@ -322,6 +322,26 @@ export default function LandingPage() {
 
   const featuredProduct = products.find((p) => p.is_featured) || products[0];
 
+  // Resolve product linked to homepage hero banner (by product_slug or product_url)
+  const heroProduct = React.useMemo(() => {
+    if (hero?.product_slug) {
+      const match = products.find(
+        (p) => p.slug === hero.product_slug || p.id === hero.product_slug
+      );
+      if (match) return match;
+    }
+    if (hero?.product_url) {
+      const slugMatch = hero.product_url.split("/products/")[1]?.split(/[?#]/)[0]?.replace(/\/$/, "");
+      if (slugMatch) {
+        const match = products.find((p) => p.slug === slugMatch || p.id === slugMatch);
+        if (match) return match;
+      }
+      const rawMatch = products.find((p) => p.slug === hero.product_url || p.id === hero.product_url);
+      if (rawMatch) return rawMatch;
+    }
+    return products.find((p) => p.slug === "apple-macbook-pro-16-m4-max") || featuredProduct;
+  }, [hero?.product_slug, hero?.product_url, products, featuredProduct]);
+
   const handleScrollToCatalog = () => {
     setActiveStep(3);
     const catalogEl = document.getElementById("catalog-section");
@@ -541,9 +561,12 @@ export default function LandingPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (featuredProduct) {
-                      addToCart(featuredProduct, 1);
+                    const targetProduct = heroProduct || featuredProduct;
+                    if (targetProduct) {
+                      addToCart(targetProduct, 1);
                       setIsCartOpen(true);
+                    } else if (hero?.product_url) {
+                      window.location.href = hero.product_url;
                     } else {
                       handleScrollToCatalog();
                     }
