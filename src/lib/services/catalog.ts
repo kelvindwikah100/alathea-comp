@@ -349,6 +349,68 @@ export async function getProducts(filters?: ProductFilterState): Promise<Product
       const { data, error } = await query;
       if (!error && data) {
         let prods = (data as any[]).map(enrichProductUpgradability);
+
+        // Seamlessly merge any local/seed products (such as Apple MacBook Pro 16 M4 Max) that do not yet exist in remote Supabase table
+        const existingSlugs = new Set(prods.map((p) => p.slug?.toLowerCase()));
+        const existingIds = new Set(prods.map((p) => p.id));
+        const localProds = getLocalProducts().map(enrichProductUpgradability);
+
+        // Build category map from Supabase query results to link proper category metadata
+        const catMap = new Map();
+        for (const p of prods) {
+          if (p.category?.slug) {
+            catMap.set(p.category.slug.toLowerCase(), p.category);
+          }
+        }
+
+        for (const lp of localProds) {
+          if (!existingSlugs.has(lp.slug?.toLowerCase()) && !existingIds.has(lp.id)) {
+            // Relink to Supabase category object if matching by slug
+            if (lp.category?.slug && catMap.has(lp.category.slug.toLowerCase())) {
+              const matchedCat = catMap.get(lp.category.slug.toLowerCase());
+              lp.category = matchedCat;
+              lp.category_id = matchedCat.id;
+            }
+
+            // Apply category filter if requested
+            if (filters?.categorySlug && filters.categorySlug !== "all" && lp.category?.slug !== filters.categorySlug) {
+              continue;
+            }
+            // Apply brand filter if requested
+            if (filters?.brand && filters.brand !== "all" && lp.brand.toLowerCase() !== filters.brand.toLowerCase()) {
+              continue;
+            }
+            // Apply stock status filter if requested
+            if (filters?.stockStatus && filters.stockStatus !== "all" && lp.stock_status !== filters.stockStatus) {
+              continue;
+            }
+            // Apply minPrice filter if requested
+            if (filters?.minPrice !== undefined && (lp.discount_price || lp.price) < filters.minPrice) {
+              continue;
+            }
+            // Apply maxPrice filter if requested
+            if (filters?.maxPrice !== undefined && (lp.discount_price || lp.price) > filters.maxPrice) {
+              continue;
+            }
+            // Apply search query filter if requested
+            if (filters?.searchQuery) {
+              const q = filters.searchQuery.toLowerCase();
+              const match =
+                lp.name.toLowerCase().includes(q) ||
+                lp.brand.toLowerCase().includes(q) ||
+                lp.sku.toLowerCase().includes(q);
+              if (!match) continue;
+            }
+
+            // Place featured laptop right at the top
+            if (lp.is_featured) {
+              prods.unshift(lp);
+            } else {
+              prods.push(lp);
+            }
+          }
+        }
+
         if (filters?.isUpgradableOnly) {
           prods = prods.filter((p) => p.is_ram_upgradable || p.is_ssd_upgradable);
         }
