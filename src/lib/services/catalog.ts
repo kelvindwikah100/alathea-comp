@@ -62,12 +62,15 @@ function getSupabaseClient() {
 // LOCAL STORAGE & SEED FALLBACK HELPERS (CLIENT & SERVER DEMO MODE)
 // ============================================================================
 
-function getLocalCategories(): Category[] {
+export function getLocalCategories(): Category[] {
   if (typeof window !== "undefined") {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_CATEGORIES_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
       localStorage.setItem(LOCAL_STORAGE_CATEGORIES_KEY, JSON.stringify(INITIAL_CATEGORIES));
     } catch {
@@ -77,7 +80,7 @@ function getLocalCategories(): Category[] {
   return [...INITIAL_CATEGORIES];
 }
 
-function saveLocalCategories(categories: Category[]) {
+export function saveLocalCategories(categories: Category[]) {
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(LOCAL_STORAGE_CATEGORIES_KEY, JSON.stringify(categories));
@@ -87,7 +90,7 @@ function saveLocalCategories(categories: Category[]) {
   }
 }
 
-function getLocalProducts(): Product[] {
+export function getLocalProducts(): Product[] {
   const categories = getLocalCategories();
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
 
@@ -96,15 +99,21 @@ function getLocalProducts(): Product[] {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_PRODUCTS_KEY);
       if (stored) {
-        products = JSON.parse(stored);
-        let hasNew = false;
-        for (const initialProd of INITIAL_PRODUCTS) {
-          if (!products.some((p) => p.slug === initialProd.slug || p.id === initialProd.id)) {
-            products.unshift(initialProd);
-            hasNew = true;
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          products = parsed;
+          let hasNew = false;
+          for (const initialProd of INITIAL_PRODUCTS) {
+            if (!products.some((p) => p.slug === initialProd.slug || p.id === initialProd.id)) {
+              products.unshift(initialProd);
+              hasNew = true;
+            }
           }
-        }
-        if (hasNew) {
+          if (hasNew) {
+            localStorage.setItem(LOCAL_STORAGE_PRODUCTS_KEY, JSON.stringify(products));
+          }
+        } else {
+          products = [...INITIAL_PRODUCTS];
           localStorage.setItem(LOCAL_STORAGE_PRODUCTS_KEY, JSON.stringify(products));
         }
       } else {
@@ -125,7 +134,7 @@ function getLocalProducts(): Product[] {
   }));
 }
 
-function saveLocalProducts(products: Product[]) {
+export function saveLocalProducts(products: Product[]) {
   if (typeof window !== "undefined") {
     try {
       // Strip nested category object before saving
@@ -244,14 +253,21 @@ export async function getCategories(): Promise<Category[]> {
   const supabase = await getSupabaseClient();
   if (supabase) {
     try {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .order("name", { ascending: true });
+      const queryWithTimeout = Promise.race([
+        supabase
+          .from("categories")
+          .select("*")
+          .order("name", { ascending: true }),
+        new Promise<{ data: null; error: { message: string } }>((resolve) =>
+          setTimeout(() => resolve({ data: null, error: { message: "Supabase categories query timeout" } }), 2000)
+        ),
+      ]);
 
-      if (!error && data) {
+      const { data, error } = await (queryWithTimeout as Promise<any>);
+
+      if (!error && Array.isArray(data) && data.length > 0) {
         categories = data as Category[];
-      } else {
+      } else if (error) {
         console.warn("Supabase categories query error, using fallback:", error?.message);
       }
     } catch (err) {
@@ -346,8 +362,15 @@ export async function getProducts(filters?: ProductFilterState): Promise<Product
           break;
       }
 
-      const { data, error } = await query;
-      if (!error && data) {
+      const queryWithTimeout = Promise.race([
+        query,
+        new Promise<{ data: null; error: { message: string } }>((resolve) =>
+          setTimeout(() => resolve({ data: null, error: { message: "Supabase products query timeout" } }), 2000)
+        ),
+      ]);
+
+      const { data, error } = await (queryWithTimeout as Promise<any>);
+      if (!error && Array.isArray(data) && data.length > 0) {
         let prods = (data as any[]).map(enrichProductUpgradability);
 
         // Seamlessly merge any local/seed products (such as Apple MacBook Pro 16 M4 Max) that do not yet exist in remote Supabase table
@@ -497,11 +520,18 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   const supabase = await getSupabaseClient();
   if (supabase) {
     try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*, category:categories(*)")
-        .eq("slug", slug)
-        .maybeSingle();
+      const queryWithTimeout = Promise.race([
+        supabase
+          .from("products")
+          .select("*, category:categories(*)")
+          .eq("slug", slug)
+          .maybeSingle(),
+        new Promise<{ data: null; error: { message: string } }>((resolve) =>
+          setTimeout(() => resolve({ data: null, error: { message: "Supabase product query timeout" } }), 2000)
+        ),
+      ]);
+
+      const { data, error } = await (queryWithTimeout as Promise<any>);
 
       if (!error && data) {
         return enrichProductUpgradability(data);

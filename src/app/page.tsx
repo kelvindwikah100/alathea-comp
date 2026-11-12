@@ -22,7 +22,13 @@ import {
   Phone,
   SlidersHorizontal,
 } from "lucide-react";
-import { getCategories, getProducts } from "@/lib/services/catalog";
+import {
+  getCategories,
+  getProducts,
+  getLocalCategories,
+  getLocalProducts,
+  enrichProductUpgradability,
+} from "@/lib/services/catalog";
 import { formatRupiah, calculateDiscountPercentage, generateWhatsAppLink, getStockBadgeColors } from "@/lib/utils";
 import { Category, Product, SelectedUpgradePlan } from "@/types/database";
 import { CustomUpgradeModal } from "@/components/catalog/custom-upgrade-modal";
@@ -37,9 +43,11 @@ export default function LandingPage() {
   // Dialog and Modal states
   const [activeModal, setActiveModal] = useState<null | "menu" | "search" | "contact" | "buy" | "materials" | "ai">(null);
 
-  // Catalog state
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  // Catalog state - populated immediately with seed/local data to avoid empty flash
+  const [categories, setCategories] = useState<Category[]>(() => getLocalCategories());
+  const [products, setProducts] = useState<Product[]>(() =>
+    getLocalProducts().map(enrichProductUpgradability)
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -55,12 +63,23 @@ export default function LandingPage() {
 
   useEffect(() => {
     setMounted(true);
+    let isCurrent = true;
+
     async function loadCatalog() {
-      const [cats, prods] = await Promise.all([getCategories(), getProducts()]);
-      setCategories(cats);
-      setProducts(prods);
+      try {
+        const [cats, prods] = await Promise.all([getCategories(), getProducts()]);
+        if (!isCurrent) return;
+        if (cats && cats.length > 0) setCategories(cats);
+        if (prods && prods.length > 0) setProducts(prods);
+      } catch (err) {
+        console.warn("Could not sync remote catalog, keeping local data:", err);
+      }
     }
     loadCatalog();
+
+    return () => {
+      isCurrent = false;
+    };
   }, []);
 
   const filteredProducts = products.filter((p) => {
