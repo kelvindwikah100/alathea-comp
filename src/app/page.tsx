@@ -20,233 +20,22 @@ import {
   Moon,
   ShoppingBag,
   Phone,
+  SlidersHorizontal,
 } from "lucide-react";
-import { getCategories, getHomepageHero, getProducts } from "@/lib/services/catalog";
+import { getCategories, getProducts } from "@/lib/services/catalog";
 import { formatRupiah, calculateDiscountPercentage, generateWhatsAppLink, getStockBadgeColors } from "@/lib/utils";
-import { Category, HomepageHero, Product, SelectedUpgradePlan } from "@/types/database";
-import { INITIAL_HOMEPAGE_HERO } from "@/lib/seed-data";
-import { RamSsdHardwareGraphic } from "@/components/catalog/ram-ssd-graphic";
+import { Category, Product, SelectedUpgradePlan } from "@/types/database";
 import { CustomUpgradeModal } from "@/components/catalog/custom-upgrade-modal";
 import { useCart } from "@/context/cart-context";
 
 import { BrandLogo } from "@/components/layout/brand-logo";
-/**
- * Custom Titanium Crystal Cluster Component
- * Renders a photorealistic multi-faceted raw titanium crystal rock tilted at -36deg
- * matching the exact silhouette, contrast, and chrome facets from the reference design.
- */
-const TitaniumCrystalGraphic: React.FC = () => {
-  const facets = [
-    { points: "28,118 18,98 32,76 52,58 76,38 102,22 128,16 152,26 164,46 154,72 134,94 108,116 78,132 48,134", fill: "url(#crystalBase)" },
-    { points: "22,102 36,92 44,108 30,118", fill: "#D8DEE8" },
-    { points: "36,92 52,86 44,108", fill: "#4A5260" },
-    { points: "30,118 44,108 58,120 42,130", fill: "#9AA4B4" },
-    { points: "44,108 64,98 58,120", fill: "#1E232B" },
-    { points: "42,130 58,120 74,126 56,135", fill: "#E6ECF5" },
-    { points: "58,120 78,108 74,126", fill: "#5C6474" },
-    { points: "26,84 44,74 36,92 20,96", fill: "#F4F7FB" },
-    { points: "44,74 58,82 36,92", fill: "#2B313B" },
-    { points: "34,68 54,58 44,74", fill: "#B8C2D2" },
-    { points: "52,86 70,74 64,98 44,108", fill: "#ECEFF6" },
-    { points: "70,74 86,84 64,98", fill: "#353C48" },
-    { points: "64,98 86,84 94,102 78,108", fill: "#C8D2E2" },
-    { points: "78,108 94,102 104,114 82,124", fill: "#D8E2F0" },
-    { points: "78,108 96,100 102,114 84,122", fill: "#F5F8FC" },
-    { points: "54,58 74,48 70,74 52,68", fill: "#7D8798" },
-    { points: "74,48 92,58 70,74", fill: "#1B2028" },
-    { points: "70,74 92,58 102,74 86,84", fill: "#E2E9F3" },
-    { points: "86,84 102,74 114,88 94,102", fill: "#525B6B" },
-    { points: "94,102 114,88 124,98 104,114", fill: "#B4BFCE" },
-    { points: "74,48 94,32 108,44 92,58", fill: "#EFF4FA" },
-    { points: "92,58 108,44 122,56 102,74", fill: "#2C333F" },
-    { points: "102,74 122,56 134,68 114,88", fill: "#DCE4F0" },
-    { points: "114,88 134,68 144,78 124,98", fill: "#3B4352" },
-    { points: "94,32 116,20 124,34 108,44", fill: "#8B96A8" },
-    { points: "108,44 124,34 138,44 122,56", fill: "#F8FAFD" },
-    { points: "122,56 138,44 150,56 134,68", fill: "#636D7E" },
-    { points: "116,20 138,16 144,30 124,34", fill: "#E4EBF5" },
-    { points: "124,34 144,30 156,42 138,44", fill: "#232933" },
-    { points: "138,44 156,42 162,56 150,56", fill: "#C2CCE0" },
-    { points: "134,68 150,56 158,68 144,78", fill: "#EDF2F9" },
-    { points: "58,72 68,64 74,76 62,82", fill: "#FFFFFF" },
-    { points: "82,52 94,46 98,58 86,62", fill: "#FFFFFF" },
-    { points: "106,34 118,28 122,40 110,44", fill: "#FFFFFF" },
-    { points: "42,96 52,90 56,100 46,104", fill: "#FFFFFF" },
-    { points: "96,78 108,72 112,82 100,86", fill: "#FFFFFF" },
-    { points: "126,50 136,44 140,54 130,58", fill: "#FFFFFF" },
-    { points: "68,104 78,98 82,108 72,112", fill: "#FFFFFF" },
-    { points: "132,22 142,20 146,28 136,32", fill: "#FFFFFF" },
-    { points: "48,66 56,62 58,70 46,72", fill: "#12161C" },
-    { points: "76,62 84,58 86,68 74,70", fill: "#12161C" },
-    { points: "102,52 110,48 112,58 100,60", fill: "#12161C" },
-    { points: "62,88 72,84 74,94 60,94", fill: "#12161C" },
-    { points: "116,70 126,66 128,76 114,78", fill: "#12161C" },
-    { points: "88,92 98,88 100,98 86,98", fill: "#12161C" },
-    { points: "32,104 40,100 42,110 30,112", fill: "#12161C" },
-  ];
-
-  return (
-    <div className="relative w-[175px] h-[150px] flex items-center justify-center select-none pointer-events-none -mr-2">
-      <div className="absolute w-[135px] h-[44px] bg-[#7C889B]/25 blur-xl rounded-full -rotate-[32deg] translate-y-4 translate-x-1" />
-      <svg
-        viewBox="0 0 180 150"
-        className="w-full h-full drop-shadow-[0_10px_14px_rgba(30,40,60,0.22)]"
-        fill="none"
-      >
-        <defs>
-          <linearGradient id="crystalBase" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#3B4250" />
-            <stop offset="35%" stopColor="#8E99AC" />
-            <stop offset="70%" stopColor="#525B6C" />
-            <stop offset="100%" stopColor="#CBD4E4" />
-          </linearGradient>
-          <linearGradient id="shardSheen" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
-            <stop offset="50%" stopColor="#B8C4D8" stopOpacity="0.7" />
-            <stop offset="100%" stopColor="#2A303C" stopOpacity="0.9" />
-          </linearGradient>
-        </defs>
-
-        <g>
-          {facets.map((f, idx) => (
-            <polygon
-              key={idx}
-              points={f.points}
-              fill={f.fill}
-              stroke="#2B323E"
-              strokeWidth="0.45"
-              strokeLinejoin="bevel"
-            />
-          ))}
-          <polygon points="18,98 26,84 34,94 22,106" fill="url(#shardSheen)" stroke="#3A4250" strokeWidth="0.5" />
-          <polygon points="46,62 62,48 68,60 52,70" fill="url(#shardSheen)" stroke="#3A4250" strokeWidth="0.5" />
-          <polygon points="80,36 98,24 104,36 86,46" fill="url(#shardSheen)" stroke="#3A4250" strokeWidth="0.5" />
-          <polygon points="112,20 132,14 136,26 118,30" fill="url(#shardSheen)" stroke="#3A4250" strokeWidth="0.5" />
-          <polygon points="142,24 158,34 152,48 138,38" fill="url(#shardSheen)" stroke="#3A4250" strokeWidth="0.5" />
-          <polygon points="148,58 162,66 146,82 136,72" fill="url(#shardSheen)" stroke="#3A4250" strokeWidth="0.5" />
-          <polygon points="122,96 138,84 128,104 110,112" fill="url(#shardSheen)" stroke="#3A4250" strokeWidth="0.5" />
-          <polygon points="88,118 108,108 96,124 76,130" fill="url(#shardSheen)" stroke="#3A4250" strokeWidth="0.5" />
-          <polygon points="52,128 74,122 62,136 42,134" fill="url(#shardSheen)" stroke="#3A4250" strokeWidth="0.5" />
-        </g>
-
-        <polyline
-          points="24,96 42,74 58,80 76,50 94,56 112,28 130,34 146,24"
-          stroke="#FFFFFF"
-          strokeWidth="1.1"
-          strokeOpacity="0.85"
-          fill="none"
-        />
-        <polyline
-          points="36,116 58,102 74,110 98,86 116,94 138,68 154,54"
-          stroke="#FFFFFF"
-          strokeWidth="0.9"
-          strokeOpacity="0.75"
-          fill="none"
-        />
-      </svg>
-    </div>
-  );
-};
-
-/**
- * Custom AI Assistant Minimalist Metallic Orb Component (Monochrome Greyscale)
- */
-const AiOrbGraphic: React.FC<{ isListening?: boolean }> = ({ isListening = false }) => {
-  return (
-    <div className="relative w-[124px] h-[124px] flex items-center justify-center select-none pointer-events-none">
-      <div
-        className={`w-[122px] h-[122px] rounded-full flex items-center justify-center relative transition-transform duration-700 ${
-          isListening ? "scale-105" : ""
-        }`}
-        style={{
-          background:
-            "radial-gradient(circle at 70% 30%, #F5F7FA 0%, #E4E8EE 52%, #D5DBE4 85%, #CBD2DC 100%)",
-          boxShadow:
-            "inset 0 2px 8px rgba(255,255,255,0.9), inset 0 -4px 12px rgba(160,170,185,0.35), 0 8px 20px rgba(180,190,205,0.22)",
-        }}
-      >
-        <div
-          className="w-[88px] h-[88px] rounded-full relative overflow-hidden flex items-center justify-center"
-          style={{
-            background:
-              "radial-gradient(circle at 65% 65%, #FFFFFF 0%, #E6EAF0 38%, #B8C2CE 74%, #9EAAB8 100%)",
-            boxShadow:
-              "0 6px 18px rgba(140,150,165,0.3), inset 0 2px 6px rgba(255,255,255,0.95)",
-          }}
-        >
-          <div
-            className="absolute -top-2 -left-2 w-[66px] h-[66px] rounded-full opacity-80"
-            style={{
-              background:
-                "radial-gradient(circle at 35% 35%, #94A0B0 0%, #BAC5D2 55%, transparent 75%)",
-              filter: "blur(2px)",
-            }}
-          />
-
-          <div
-            className="absolute -top-1 right-0 w-[62px] h-[62px] rounded-full opacity-90"
-            style={{
-              background:
-                "radial-gradient(circle at 60% 35%, #F4F6F9 0%, #D8DFE8 55%, transparent 78%)",
-              filter: "blur(1px)",
-            }}
-          />
-
-          <div
-            className="absolute bottom-0 -left-1 w-[58px] h-[58px] rounded-full opacity-80"
-            style={{
-              background:
-                "radial-gradient(circle at 30% 70%, #A8B4C2 0%, #CCD4DE 60%, transparent 80%)",
-              filter: "blur(2px)",
-            }}
-          />
-
-          <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full">
-            <defs>
-              <radialGradient id="orbGlowCoreMono" cx="62%" cy="62%" r="42%">
-                <stop offset="0%" stopColor="#FFFFFF" stopOpacity="1" />
-                <stop offset="45%" stopColor="#F8FAFC" stopOpacity="0.95" />
-                <stop offset="80%" stopColor="#D5DDE6" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#A8B5C2" stopOpacity="0" />
-              </radialGradient>
-              <linearGradient id="petalEdgeMono" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#8C98A6" stopOpacity="0.65" />
-                <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#B0BDCC" stopOpacity="0.3" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M 14,55 C 24,22 68,20 84,48 C 68,34 34,38 14,55 Z"
-              fill="url(#petalEdgeMono)"
-              opacity="0.75"
-            />
-            <path
-              d="M 24,78 C 20,44 52,28 82,42 C 58,42 40,56 24,78 Z"
-              fill="#94A2B2"
-              opacity="0.35"
-            />
-            <circle cx="58" cy="58" r="34" fill="url(#orbGlowCoreMono)" />
-          </svg>
-
-          <div className="absolute inset-0 rounded-full border border-white/80 pointer-events-none" />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default function LandingPage() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  // Reference interactive states
-  const [activeStep, setActiveStep] = useState<number>(1);
-  const [transportMode, setTransportMode] = useState<"paused" | "playing" | "recording">("paused");
-  const [secondsElapsed, setSecondsElapsed] = useState<number>(97);
-  const [trackNumber, setTrackNumber] = useState<number>(4);
-  const [wheelRotation, setWheelRotation] = useState<number>(0);
+  // Dialog and Modal states
   const [activeModal, setActiveModal] = useState<null | "menu" | "search" | "contact" | "buy" | "materials" | "ai">(null);
-  const [cartCount, setCartCount] = useState<number>(1);
 
   // Catalog state
   const [categories, setCategories] = useState<Category[]>([]);
@@ -258,14 +47,6 @@ export default function LandingPage() {
 
   // Cart Context
   const { totalItems, setIsCartOpen, addToCart } = useCart();
-
-  // Hero image + floating labels, editable in Admin > Tampilan Beranda
-  const [hero, setHero] = useState<HomepageHero>(INITIAL_HOMEPAGE_HERO);
-  useEffect(() => {
-    getHomepageHero().then((res) => {
-      if (res) setHero(res);
-    });
-  }, []);
 
   // Custom Upgrade state
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
@@ -282,32 +63,6 @@ export default function LandingPage() {
     loadCatalog();
   }, []);
 
-  // Motorized cooling wheel animation on interactive play/record
-  useEffect(() => {
-    if (transportMode === "paused") return;
-
-    const timerInterval = setInterval(() => {
-      setSecondsElapsed((prev) => prev + 1);
-    }, 1000);
-
-    const wheelInterval = setInterval(() => {
-      setWheelRotation((prev) => (prev + (transportMode === "recording" ? 2.5 : 1.5)) % 360);
-    }, 30);
-
-    return () => {
-      clearInterval(timerInterval);
-      clearInterval(wheelInterval);
-    };
-  }, [transportMode]);
-
-  const formatOledTimer = (totalSec: number) => {
-    const hrs = Math.floor(totalSec / 3600);
-    const mins = Math.floor((totalSec % 3600) / 60);
-    const secs = totalSec % 60;
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${hrs}.${pad(mins)}.${pad(secs)}`;
-  };
-
   const filteredProducts = products.filter((p) => {
     const matchesCategory = selectedCategory === "all" || p.category?.slug === selectedCategory;
     const matchesSearch =
@@ -319,34 +74,14 @@ export default function LandingPage() {
     return matchesCategory && matchesSearch && matchesUpgradable;
   });
 
-
   const featuredProduct = products.find((p) => p.is_featured) || products[0];
 
-  // Resolve product linked to homepage hero banner (by product_slug or product_url)
-  const heroProduct = React.useMemo(() => {
-    if (hero?.product_slug) {
-      const match = products.find(
-        (p) => p.slug === hero.product_slug || p.id === hero.product_slug
-      );
-      if (match) return match;
-    }
-    if (hero?.product_url) {
-      const slugMatch = hero.product_url.split("/products/")[1]?.split(/[?#]/)[0]?.replace(/\/$/, "");
-      if (slugMatch) {
-        const match = products.find((p) => p.slug === slugMatch || p.id === slugMatch);
-        if (match) return match;
-      }
-      const rawMatch = products.find((p) => p.slug === hero.product_url || p.id === hero.product_url);
-      if (rawMatch) return rawMatch;
-    }
-    return products.find((p) => p.slug === "apple-macbook-pro-16-m4-max") || featuredProduct;
-  }, [hero?.product_slug, hero?.product_url, products, featuredProduct]);
-
   const handleScrollToCatalog = () => {
-    setActiveStep(3);
     const catalogEl = document.getElementById("catalog-section");
     if (catalogEl) {
       catalogEl.scrollIntoView({ behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -361,11 +96,6 @@ export default function LandingPage() {
           <div className="flex items-center">
             <Link
               href="/"
-              onClick={() => {
-                setTransportMode("paused");
-                setSecondsElapsed(97);
-                setWheelRotation(0);
-              }}
               className="flex items-center select-none"
               aria-label="Alathea Comp – Beranda"
             >
@@ -457,366 +187,12 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Locked-Proportion Desktop Frame Container (1440px reference) */}
-      <div className="font-jakarta relative w-full max-w-[1440px] px-6 sm:px-11 pt-4 pb-20 flex flex-col justify-between">
-        
-        {/* Ambient neutral cool light behind the flagship hardware */}
-        <div
-          className="pointer-events-none absolute right-[8%] top-[12%] w-[520px] h-[520px] rounded-full opacity-35 dark:opacity-10 blur-[100px]"
-          style={{
-            background: "radial-gradient(circle, #E2E8F0 0%, #EEF2F6 55%, transparent 100%)",
-          }}
-        />
-
+      {/* Main Catalog View Container */}
+      <div className="font-jakarta relative w-full max-w-[1440px] px-4 sm:px-11 pt-6 sm:pt-8 pb-20 flex flex-col justify-between">
         {/* ============================================================
-            2. HERO ZONE WRAPPER WITH PINNED VERTICAL STEP INDICATOR
+            PRODUCT CATALOG SECTION (Direct View)
            ============================================================ */}
-        <div className="relative w-full">
-          {/* Vertical Step Indicator (Strictly bound to Hero Section) */}
-          <div className="hidden lg:flex flex-col items-center absolute -left-[24px] xl:-left-[42px] top-[42%] -translate-y-1/2 z-20 select-none">
-            <div className="flex flex-col items-center">
-              {[1, 2, 3].map((step, index) => {
-                const isActive = activeStep === step;
-                return (
-                  <button
-                    key={step}
-                    onClick={() => {
-                      setActiveStep(step);
-                      if (step === 3) handleScrollToCatalog();
-                    }}
-                    style={{ zIndex: 30 - index * 10 }}
-                    className={`w-[21px] h-[21px] rounded-full text-[11px] font-medium flex items-center justify-center transition-all cursor-pointer ${
-                      index > 0 ? "-mt-[3.5px]" : ""
-                    } ${
-                      isActive
-                        ? "bg-[#111111] dark:bg-white text-white dark:text-black dark:font-semibold border border-[#111111] dark:border-white"
-                        : "bg-white/90 dark:bg-transparent text-[#1E1E1E] dark:text-white/55 border border-[#484E58] dark:border-white/25 hover:border-[#111111] dark:hover:border-white/60 dark:hover:text-white"
-                    }`}
-                    title={`Bagian 0${step}`}
-                  >
-                    {step}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-9 w-[1.5px] h-[106px] bg-[#CBD5E6] dark:bg-white/10 relative rounded-full overflow-hidden">
-              <div
-                className="absolute left-0 w-full bg-[#141414] dark:bg-zinc-100 transition-all duration-300"
-                style={{
-                  height: "46px",
-                  bottom: activeStep === 1 ? "0px" : activeStep === 2 ? "30px" : "60px",
-                }}
-              />
-            </div>
-
-            <span className="mt-2 text-[12px] font-medium text-[#222222] dark:text-zinc-400 tracking-tight font-mono">
-              0{activeStep}
-            </span>
-          </div>
-
-          {/* MAIN HERO SECTION (Left Copy + Right Hardware Assembly) */}
-          <main className="relative grid grid-cols-1 lg:grid-cols-12 items-center pt-8 pb-4 lg:pl-[112px]">
-            {/* LEFT COLUMN: Hero Copy & CTA */}
-            <div className="lg:col-span-6 z-20 pr-2">
-              {/* Hot Hardware Badge */}
-              <div className="flex items-center gap-4 mb-7">
-                <div className="w-[50px] h-[50px] rounded-full bg-[#EAEFF6] dark:bg-white/[0.05] dark:border dark:border-white/10 dark:shadow-[0_0_24px_rgba(56,189,248,0.15)] flex items-center justify-center shrink-0">
-                  <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    className="w-[22px] h-[22px] stroke-[#141414] dark:stroke-sky-300 motion-safe:animate-[spin_14s_linear_infinite]"
-                    strokeWidth="2.3"
-                    strokeLinecap="round"
-                  >
-                    <line x1="12" y1="3.5" x2="12" y2="20.5" />
-                    <line x1="4.6" y1="7.75" x2="19.4" y2="16.25" />
-                    <line x1="19.4" y1="7.75" x2="4.6" y2="16.25" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-[20px] font-bold text-[#141414] dark:text-zinc-100 leading-tight tracking-[-0.01em]">
-                    Hot Hardware
-                  </h2>
-                  <p className="text-[13.5px] font-normal text-[#8D939E] dark:text-[#A1A1AA] leading-snug mt-0.5">
-                    Revolution in Personal Computing
-                  </p>
-                </div>
-              </div>
-
-              {/* Main Headline */}
-              <h1 className="text-[40px] sm:text-[54px] xl:text-[56px] font-medium text-[#111111] dark:text-white leading-[1.14] tracking-[-0.028em] mb-6">
-                Discover The Best Digital
-                <br />
-                Computer & Hardware
-              </h1>
-
-              {/* Subtitle */}
-              <p className="text-[16.5px] sm:text-[17px] font-normal text-[#676B74] dark:text-[#A1A1AA] leading-[1.6] max-w-[440px] mb-8">
-                Get the best by trusting us, we offer the best quality and the best price with official warranty.
-              </p>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-4 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const targetProduct = heroProduct || featuredProduct;
-                    if (targetProduct) {
-                      addToCart(targetProduct, 1);
-                      setIsCartOpen(true);
-                    } else if (hero?.product_url) {
-                      window.location.href = hero.product_url;
-                    } else {
-                      handleScrollToCatalog();
-                    }
-                  }}
-                  className="w-[206px] h-[58px] rounded-full border-[1.2px] border-[#262626] dark:border-white bg-transparent dark:bg-white hover:bg-[#111111] hover:text-white dark:hover:bg-white dark:hover:text-black dark:hover:shadow-[0_0_15px_rgba(255,255,255,0.3)] text-[#111111] dark:text-black group transition-all duration-200 flex items-center justify-between px-7 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0b0d10]"
-                >
-                  <span className="text-[15px] font-medium dark:font-semibold tracking-[-0.01em]">Buy Now</span>
-                  <ArrowUpRight className="w-[18px] h-[18px] stroke-[1.8] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 text-[#111111] dark:text-black group-hover:text-white dark:group-hover:text-black" />
-                </button>
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN: MacBook Pro Flagship Laptop Visual (Full Object + Drop Shadow) + 3 Floating Widgets */}
-            <div className="lg:col-span-6 relative h-[520px] flex items-center justify-center mt-10 lg:mt-0">
-              {/* Dark mode ambient light behind the hardware */}
-              <div
-                aria-hidden="true"
-                className="hidden dark:block pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[440px] h-[440px] sm:w-[560px] sm:h-[560px] rounded-full blur-[60px]"
-                style={{
-                  background:
-                    "radial-gradient(circle at center, rgba(56, 189, 248, 0.12) 0%, rgba(139, 92, 246, 0.08) 40%, transparent 70%)",
-                }}
-              />
-              {/* Full Laptop Object directly without div container, with rich realistic drop shadow */}
-              <div className="relative z-10 w-[420px] sm:w-[500px] lg:w-[540px] h-[340px] sm:h-[390px] select-none flex items-center justify-center translate-x-1 lg:translate-x-3 transition-transform duration-700 hover:scale-[1.03]">
-                {hero ? (
-                  <Image
-                    src={hero.image_url || "/macbook-hero.png"}
-                    alt={hero.image_alt || "Apple MacBook Pro M4 Max"}
-                    fill
-                    priority
-                    className="object-contain"
-                    style={{
-                      filter:
-                        "drop-shadow(-18px 28px 36px rgba(15, 23, 42, 0.26)) drop-shadow(0 10px 18px rgba(0, 0, 0, 0.12))",
-                    }}
-                    sizes="(max-width: 640px) 420px, (max-width: 1024px) 500px, 540px"
-                  />
-                ) : (
-                  <div className="w-[420px] h-[300px] rounded-3xl animate-pulse bg-neutral-200/50 dark:bg-neutral-800/50" />
-                )}
-              </div>
-
-              {/* 3 FLOATING FROSTED GLASS CALLOUT WIDGETS & SVG POINTER LINES */}
-              {/* 1. TOP-LEFT CALLOUT */}
-              {hero?.callouts[0]?.title && (
-                <div className="absolute top-[28px] left-[6px] sm:left-[18px] z-30 flex items-center pointer-events-none animate-in fade-in duration-500">
-                  <div className="hero-callout w-[170px] text-center">
-                    <div className="text-[13px] font-bold text-[#18181B] dark:text-white leading-tight">
-                      {hero.callouts[0].title}
-                    </div>
-                    <div className="text-[10px] font-medium text-[#64748B] dark:text-[#A1A1AA] mt-1 leading-tight">
-                      {hero.callouts[0].subtitle}
-                    </div>
-                  </div>
-
-                  <svg
-                    width="98"
-                    height="48"
-                    viewBox="0 0 98 48"
-                    fill="none"
-                    className="-ml-[1px] mt-7 overflow-visible"
-                  >
-                    <defs>
-                      <linearGradient id="lineLiquid" x1="0" y1="0" x2="98" y2="48" gradientUnits="userSpaceOnUse">
-                        <stop offset="0%" stopColor="#262B33" stopOpacity="0.95" />
-                        <stop offset="72%" stopColor="#4A5568" stopOpacity="0.7" />
-                        <stop offset="100%" stopColor="#94A3B8" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-                    <path
-                      d="M 0,10 L 74,10 Q 90,10 90,26 L 88,44"
-                      stroke="url(#lineLiquid)"
-                      strokeWidth="1.25"
-                      strokeLinecap="round"
-                      className="hero-pointer"
-                    />
-                    <circle cx="88" cy="44" r="2" className="hidden dark:block fill-white/50" />
-                  </svg>
-                </div>
-              )}
-
-              {/* 2. MIDDLE-LEFT CALLOUT */}
-              {hero?.callouts[1]?.title && (
-                <div className="absolute bottom-[132px] -left-[4px] sm:left-[0px] z-30 flex items-center pointer-events-none animate-in fade-in duration-500">
-                  <div className="hero-callout w-[170px] text-center">
-                    <div className="text-[13px] font-bold text-[#18181B] dark:text-white leading-tight">
-                      {hero.callouts[1].title}
-                    </div>
-                    <div className="text-[10px] font-medium text-[#64748B] dark:text-[#A1A1AA] mt-1 leading-tight">
-                      {hero.callouts[1].subtitle}
-                    </div>
-                  </div>
-
-                  <svg
-                    width="155"
-                    height="95"
-                    viewBox="0 0 155 95"
-                    fill="none"
-                    className="-ml-[1px] -mt-5 overflow-visible"
-                  >
-                    <defs>
-                      <linearGradient id="lineBattery" x1="0" y1="80" x2="150" y2="0" gradientUnits="userSpaceOnUse">
-                        <stop offset="0%" stopColor="#22262E" stopOpacity="0.95" />
-                        <stop offset="65%" stopColor="#4B5563" stopOpacity="0.65" />
-                        <stop offset="100%" stopColor="#94A3B8" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-                    <path
-                      d="M 0,76 L 44,76 Q 50,76 55,72 L 146,6"
-                      stroke="url(#lineBattery)"
-                      strokeWidth="1.25"
-                      strokeLinecap="round"
-                      className="hero-pointer"
-                    />
-                    <circle cx="146" cy="6" r="2" className="hidden dark:block fill-white/50" />
-                  </svg>
-                </div>
-              )}
-
-              {/* 3. BOTTOM-RIGHT CALLOUT */}
-              {hero?.callouts[2]?.title && (
-                <div className="absolute bottom-[36px] right-0 z-30 flex items-center pointer-events-none animate-in fade-in duration-500">
-                  <svg
-                    width="68"
-                    height="96"
-                    viewBox="0 0 68 96"
-                    fill="none"
-                    className="-mr-[1px] -mt-8 overflow-visible"
-                  >
-                    <defs>
-                      <linearGradient id="lineM4" x1="68" y1="86" x2="4" y2="0" gradientUnits="userSpaceOnUse">
-                        <stop offset="0%" stopColor="#262B33" stopOpacity="0.95" />
-                        <stop offset="65%" stopColor="#525E70" stopOpacity="0.65" />
-                        <stop offset="100%" stopColor="#94A3B8" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-                    <path
-                      d="M 68,84 L 36,84 Q 30,84 27,77 L 4,8"
-                      stroke="url(#lineM4)"
-                      strokeWidth="1.25"
-                      strokeLinecap="round"
-                      className="hero-pointer"
-                    />
-                    <circle cx="4" cy="8" r="2" className="hidden dark:block fill-white/50" />
-                  </svg>
-
-                  <div className="hero-callout w-[170px] text-center">
-                    <div className="text-[13px] font-bold text-[#18181B] dark:text-white leading-tight">
-                      {hero.callouts[2].title}
-                    </div>
-                    <div className="text-[10px] font-medium text-[#64748B] dark:text-[#A1A1AA] mt-1 leading-tight">
-                      {hero.callouts[2].subtitle}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </main>
-
-          {/* ============================================================
-              4. BOTTOM 2 FEATURE CARDS ROW (Exact Reference UI Design)
-             ============================================================ */}
-          <section className="relative z-20 grid grid-cols-1 lg:grid-cols-2 gap-6 w-full mt-4">
-            {/* LEFT CARD: Custom Upgrade (RAM & SSD NVMe) */}
-            <div
-              onClick={() => setIsUpgradeModalOpen(true)}
-              className="h-auto sm:h-[196px] rounded-[28px] px-8 sm:px-9 py-6 flex flex-col sm:flex-row items-center justify-between relative overflow-hidden group cursor-pointer hover:shadow-lg transition-all duration-300 frost-card"
-            >
-              <div className="max-w-[260px] z-10 text-left">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/70 dark:bg-zinc-800 text-[10.5px] font-bold text-[#141414] dark:text-zinc-200 mb-2 border border-white/80">
-                  <Sparkles className="w-3 h-3 text-[#111111] dark:text-white" />
-                  <span>GARANSI TETAP AKTIF</span>
-                </div>
-                <h3 className="text-[26px] font-medium text-[#111111] tracking-[-0.02em] leading-tight mb-2">
-                  Custom Upgrade
-                </h3>
-                <p className="text-[12.5px] font-normal text-[#2D3138] leading-[1.48]">
-                  Tingkatkan kapasitas RAM DDR5 dan penyimpanan SSD NVMe langsung pada unit laptop pilihanmu tanpa menggugurkan garansi resmi.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-4 sm:gap-5 mt-4 sm:mt-0 z-10">
-                <RamSsdHardwareGraphic />
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsUpgradeModalOpen(true);
-                  }}
-                  className="w-[56px] h-[56px] rounded-full bg-[#0C0C0C] text-white flex items-center justify-center group-hover:scale-105 active:scale-95 transition-transform shrink-0 cursor-pointer shadow-md"
-                  aria-label="Buka Simulasi Custom Upgrade"
-                >
-                  <ArrowUpRight className="w-[20px] h-[20px] stroke-[1.8] text-white" />
-                </button>
-              </div>
-            </div>
-
-            {/* RIGHT CARD: WhatsApp Consultation */}
-            <div className="relative">
-              <div
-                onClick={() => setActiveModal("ai")}
-                className="relative z-10 h-auto sm:h-[196px] rounded-[28px] px-8 sm:px-9 py-6 flex flex-col sm:flex-row items-center justify-between overflow-hidden backdrop-blur-md group cursor-pointer hover:shadow-lg transition-all duration-300"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(233,238,245,0.88) 0%, rgba(237,241,247,0.84) 100%)",
-                  boxShadow:
-                    "0 4px 24px rgba(165,180,205,0.12), inset 0 1px 1px rgba(255,255,255,0.9)",
-                  border: "1px solid rgba(255,255,255,0.85)",
-                }}
-              >
-                <div className="max-w-[268px] z-10 text-left">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/70 dark:bg-zinc-800 text-[10.5px] font-bold text-[#141414] dark:text-zinc-200 mb-2 border border-white/80">
-                    <MessageCircle className="w-3 h-3 text-[#111111] dark:text-white" />
-                    <span>VIA WHATSAPP</span>
-                  </div>
-                  <h3 className="text-[26px] font-medium text-[#111111] tracking-[-0.02em] leading-tight mb-2">
-                    Konsultasi Gratis
-                  </h3>
-                  <p className="text-[12.5px] font-normal text-[#2D3138] leading-[1.48]">
-                    Konsultasikan spesifikasi laptop untuk kuliah, kerja, gaming, hingga editing 4K sesuai budget, langsung dengan tim Alathea Comp lewat WhatsApp.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-6 sm:gap-7 mt-4 sm:mt-0 z-10">
-                  <AiOrbGraphic isListening={transportMode === "recording"} />
-
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveModal("ai");
-                    }}
-                    className="w-[56px] h-[56px] rounded-full bg-[#0C0C0C] text-white flex items-center justify-center group-hover:scale-105 active:scale-95 transition-transform shrink-0 cursor-pointer shadow-md"
-                    aria-label="Konsultasi AI"
-                  >
-                    <ArrowUpRight className="w-[20px] h-[20px] stroke-[1.8] text-white" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-          </section>
-        </div>
-
-        {/* ============================================================
-            5. INTERACTIVE PRODUCT CATALOG SECTION (Exact Card Style)
-           ============================================================ */}
-        <section id="catalog-section" className="relative z-20 mt-20 space-y-8 scroll-mt-20">
+        <section id="catalog-section" className="relative z-20 space-y-8 scroll-mt-20">
           <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 border-b border-zinc-200/80 dark:border-zinc-800 pb-5">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EAEFF6] dark:bg-zinc-800 text-[11px] font-semibold text-[#141414] dark:text-zinc-200 mb-2.5">
@@ -937,9 +313,18 @@ export default function LandingPage() {
                           {p.brand}
                         </span>
                         {isUpgradable && (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200/80 dark:border-emerald-800/80 flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsUpgradeModalOpen(true);
+                            }}
+                            className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200/80 dark:border-emerald-800/80 flex items-center gap-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 cursor-pointer transition"
+                            title="Klik untuk simulasi kustomisasi RAM & SSD"
+                          >
                             <Sparkles className="w-2.5 h-2.5" /> Upgradable
-                          </span>
+                          </button>
                         )}
                       </div>
 
@@ -1202,6 +587,31 @@ export default function LandingPage() {
                         className="w-full p-3 text-left rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold flex items-center justify-between text-[#111111] dark:text-white transition cursor-pointer"
                       >
                         <span>Katalog Lengkap</span>
+                        <ArrowUpRight className="w-4 h-4 text-[#111111] dark:text-zinc-400" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setActiveModal(null);
+                          setIsUpgradeModalOpen(true);
+                        }}
+                        className="w-full p-3 text-left rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold flex items-center justify-between text-[#111111] dark:text-white transition cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                          <span>Simulasi Custom Upgrade (RAM & SSD)</span>
+                        </span>
+                        <ArrowUpRight className="w-4 h-4 text-[#111111] dark:text-zinc-400" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setActiveModal("ai");
+                        }}
+                        className="w-full p-3 text-left rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold flex items-center justify-between text-[#111111] dark:text-white transition cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2">
+                          <MessageCircle className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                          <span>Konsultasi Gratis via WhatsApp</span>
+                        </span>
                         <ArrowUpRight className="w-4 h-4 text-[#111111] dark:text-zinc-400" />
                       </button>
                       <Link
