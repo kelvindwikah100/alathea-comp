@@ -29,6 +29,7 @@ import {
   getLocalProducts,
   enrichProductUpgradability,
 } from "@/lib/services/catalog";
+import { INITIAL_CATEGORIES, INITIAL_PRODUCTS } from "@/lib/seed-data";
 import { formatRupiah, calculateDiscountPercentage, generateWhatsAppLink, getStockBadgeColors } from "@/lib/utils";
 import { Category, Product, SelectedUpgradePlan } from "@/types/database";
 import { CustomUpgradeModal } from "@/components/catalog/custom-upgrade-modal";
@@ -43,10 +44,10 @@ export default function LandingPage() {
   // Dialog and Modal states
   const [activeModal, setActiveModal] = useState<null | "menu" | "search" | "contact" | "buy" | "materials" | "ai">(null);
 
-  // Catalog state - populated immediately with seed/local data to avoid empty flash
-  const [categories, setCategories] = useState<Category[]>(() => getLocalCategories());
+  // Catalog state - initialized deterministically with seed data to prevent SSR/client hydration mismatch
+  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
   const [products, setProducts] = useState<Product[]>(() =>
-    getLocalProducts().map(enrichProductUpgradability)
+    INITIAL_PRODUCTS.map(enrichProductUpgradability)
   );
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -64,6 +65,12 @@ export default function LandingPage() {
   useEffect(() => {
     setMounted(true);
     let isCurrent = true;
+
+    // Immediately load client localStorage updates if available (safe after hydration)
+    const localCats = getLocalCategories();
+    const localProds = getLocalProducts().map(enrichProductUpgradability);
+    if (localCats.length > 0) setCategories(localCats);
+    if (localProds.length > 0) setProducts(localProds);
 
     async function loadCatalog() {
       try {
