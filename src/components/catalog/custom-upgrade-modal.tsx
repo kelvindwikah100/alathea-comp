@@ -12,16 +12,19 @@ import {
   MessageCircle,
   Wrench,
   HelpCircle,
+  ShoppingBag,
 } from "lucide-react";
-import { UpgradeOption, SelectedUpgradePlan } from "@/types/database";
+import { UpgradeOption, SelectedUpgradePlan, Product } from "@/types/database";
 import { getUpgradeOptions } from "@/lib/services/catalog";
 import { formatRupiah } from "@/lib/utils";
 
 interface CustomUpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onApplyUpgrade: (plan: SelectedUpgradePlan) => void;
+  onApplyUpgrade?: (plan: SelectedUpgradePlan) => void;
   currentPlan?: SelectedUpgradePlan;
+  targetProduct?: Product | null;
+  onAddToCart?: (product: Product, plan: SelectedUpgradePlan | null) => void;
 }
 
 export const CustomUpgradeModal: React.FC<CustomUpgradeModalProps> = ({
@@ -29,6 +32,8 @@ export const CustomUpgradeModal: React.FC<CustomUpgradeModalProps> = ({
   onClose,
   onApplyUpgrade,
   currentPlan,
+  targetProduct,
+  onAddToCart,
 }) => {
   const [options, setOptions] = useState<UpgradeOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,6 +51,9 @@ export const CustomUpgradeModal: React.FC<CustomUpgradeModalProps> = ({
       if (currentPlan) {
         setSelectedRam(currentPlan.ram || null);
         setSelectedSsd(currentPlan.ssd || null);
+      } else {
+        setSelectedRam(null);
+        setSelectedSsd(null);
       }
     }
   }, [isOpen, currentPlan]);
@@ -72,10 +80,12 @@ export const CustomUpgradeModal: React.FC<CustomUpgradeModalProps> = ({
   const totalCost = ramCost + ssdCost;
 
   const handleApply = () => {
-    onApplyUpgrade({
-      ram: selectedRam,
-      ssd: selectedSsd,
-    });
+    if (onApplyUpgrade) {
+      onApplyUpgrade({
+        ram: selectedRam,
+        ssd: selectedSsd,
+      });
+    }
     onClose();
 
     // Smooth scroll to catalog section
@@ -130,11 +140,38 @@ export const CustomUpgradeModal: React.FC<CustomUpgradeModalProps> = ({
           </div>
 
           <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#111111] dark:text-white">
-            Simulasi Custom Upgrade Laptop
+            {targetProduct ? "Kustomisasi Upgrade RAM & SSD" : "Simulasi Custom Upgrade Laptop"}
           </h3>
           <p className="text-xs sm:text-sm text-[#676B74] dark:text-zinc-400 mt-1">
-            Tingkatkan performa multitasking dan ruang penyimpanan secara instan. Pemasangan dilakukan teknisi resmi dengan pengujian QC profesional sebelum dikirim.
+            {targetProduct
+              ? "Tentukan apakah Anda ingin menambahkan upgrade RAM & SSD atau membeli dengan spesifikasi bawaan pabrik."
+              : "Tingkatkan performa multitasking dan ruang penyimpanan secara instan. Pemasangan dilakukan teknisi resmi dengan pengujian QC profesional sebelum dikirim."}
           </p>
+
+          {/* Target Product Mini Preview */}
+          {targetProduct && (
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#F4F6F9] dark:bg-zinc-850/70 border border-zinc-200/80 dark:border-zinc-800 mt-3.5">
+              <div className="w-12 h-12 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 p-1 relative overflow-hidden shrink-0">
+                {targetProduct.images?.[0] ? (
+                  <img
+                    src={targetProduct.images[0]}
+                    alt={targetProduct.name}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                ) : (
+                  <Cpu className="w-6 h-6 text-zinc-400 m-auto mt-2" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h5 className="text-xs sm:text-sm font-bold text-[#111111] dark:text-white truncate">
+                  {targetProduct.name}
+                </h5>
+                <span className="font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                  Harga Unit Standar: {formatRupiah(targetProduct.discount_price || targetProduct.price)}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ================================================================
@@ -155,84 +192,90 @@ export const CustomUpgradeModal: React.FC<CustomUpgradeModalProps> = ({
               <span className="text-[11px] text-[#8D939E] font-medium">Pilih 1 Opsi</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {/* Option: Tanpa Upgrade RAM */}
-              <button
-                type="button"
-                onClick={() => setSelectedRam(null)}
-                className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between ${
-                  selectedRam === null
-                    ? "border-[#141414] dark:border-white bg-[#F4F6F9] dark:bg-zinc-800/90 shadow-xs"
-                    : "border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/50"
-                }`}
-              >
-                <div>
-                  <div className="text-xs font-bold text-[#111111] dark:text-white">
-                    Tanpa Upgrade RAM
-                  </div>
-                  <div className="text-[11px] text-[#8D939E] mt-0.5">
-                    Gunakan kapasitas RAM bawaan laptop
-                  </div>
-                </div>
-                <div className="text-right shrink-0 ml-2">
-                  <span className="text-xs font-mono font-semibold text-[#8D939E]">Rp 0</span>
-                  {selectedRam === null && (
-                    <div className="w-4 h-4 rounded-full bg-[#111111] dark:bg-white text-white dark:text-black flex items-center justify-center mt-1 ml-auto">
-                      <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+            {targetProduct && targetProduct.is_ram_upgradable === false ? (
+              <div className="p-3.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 text-xs text-[#676B74] dark:text-zinc-400">
+                RAM pada unit ini tersolder (on-board) dan tidak mendukung penambahan modul RAM. Spesifikasi RAM menggunakan bawaan pabrik.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Option: Tanpa Upgrade RAM */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedRam(null)}
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+                    selectedRam === null
+                      ? "border-[#141414] dark:border-white bg-[#F4F6F9] dark:bg-zinc-800/90 shadow-xs"
+                      : "border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/50"
+                  }`}
+                >
+                  <div>
+                    <div className="text-xs font-bold text-[#111111] dark:text-white">
+                      Tanpa Upgrade RAM
                     </div>
-                  )}
-                </div>
-              </button>
-
-              {/* Dynamic RAM Options */}
-              {ramOptions.map((opt) => {
-                const isSelected = selectedRam?.id === opt.id;
-                const isOutOfStock = !opt.is_active;
-
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    disabled={isOutOfStock}
-                    onClick={() => !isOutOfStock && setSelectedRam(opt)}
-                    className={`p-3.5 rounded-2xl border text-left transition-all flex items-center justify-between ${
-                      isOutOfStock
-                        ? "opacity-45 bg-zinc-100 dark:bg-zinc-850 border-zinc-200 dark:border-zinc-800 cursor-not-allowed"
-                        : isSelected
-                        ? "border-[#141414] dark:border-white bg-[#F4F6F9] dark:bg-zinc-800/90 shadow-xs cursor-pointer"
-                        : "border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/50 cursor-pointer"
-                    }`}
-                  >
-                    <div>
-                      <div className="text-xs font-bold text-[#111111] dark:text-white">
-                        {opt.name}
-                      </div>
-                      <div className="text-[11px] font-mono text-[#8D939E] mt-0.5">
-                        {opt.slot_type}
-                      </div>
+                    <div className="text-[11px] text-[#8D939E] mt-0.5">
+                      Gunakan kapasitas RAM bawaan laptop
                     </div>
-                    <div className="text-right shrink-0 ml-2">
-                      {isOutOfStock ? (
-                        <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-300 text-[10px] font-semibold">
-                          Stok Habis
-                        </span>
-                      ) : (
-                        <>
-                          <span className="text-xs font-mono font-bold text-[#111111] dark:text-white block">
-                            +{formatRupiah(opt.price)}
+                  </div>
+                  <div className="text-right shrink-0 ml-2">
+                    <span className="text-xs font-mono font-semibold text-[#8D939E]">Rp 0</span>
+                    {selectedRam === null && (
+                      <div className="w-4 h-4 rounded-full bg-[#111111] dark:bg-white text-white dark:text-black flex items-center justify-center mt-1 ml-auto">
+                        <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+                      </div>
+                    )}
+                  </div>
+                </button>
+
+                {/* Dynamic RAM Options */}
+                {ramOptions.map((opt) => {
+                  const isSelected = selectedRam?.id === opt.id;
+                  const isOutOfStock = !opt.is_active;
+
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      disabled={isOutOfStock}
+                      onClick={() => !isOutOfStock && setSelectedRam(opt)}
+                      className={`p-3.5 rounded-2xl border text-left transition-all flex items-center justify-between ${
+                        isOutOfStock
+                          ? "opacity-45 bg-zinc-100 dark:bg-zinc-850 border-zinc-200 dark:border-zinc-800 cursor-not-allowed"
+                          : isSelected
+                          ? "border-[#141414] dark:border-white bg-[#F4F6F9] dark:bg-zinc-800/90 shadow-xs cursor-pointer"
+                          : "border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/50 cursor-pointer"
+                      }`}
+                    >
+                      <div>
+                        <div className="text-xs font-bold text-[#111111] dark:text-white">
+                          {opt.name}
+                        </div>
+                        <div className="text-[11px] font-mono text-[#8D939E] mt-0.5">
+                          {opt.slot_type}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 ml-2">
+                        {isOutOfStock ? (
+                          <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-300 text-[10px] font-semibold">
+                            Stok Habis
                           </span>
-                          {isSelected && (
-                            <div className="w-4 h-4 rounded-full bg-[#111111] dark:bg-white text-white dark:text-black flex items-center justify-center mt-1 ml-auto">
-                              <Check className="w-2.5 h-2.5 stroke-[2.5]" />
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                        ) : (
+                          <>
+                            <span className="text-xs font-mono font-bold text-[#111111] dark:text-white block">
+                              +{formatRupiah(opt.price)}
+                            </span>
+                            {isSelected && (
+                              <div className="w-4 h-4 rounded-full bg-[#111111] dark:bg-white text-white dark:text-black flex items-center justify-center mt-1 ml-auto">
+                                <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Section: SSD Storage Upgrade */}
@@ -249,84 +292,90 @@ export const CustomUpgradeModal: React.FC<CustomUpgradeModalProps> = ({
               <span className="text-[11px] text-[#8D939E] font-medium">Pilih 1 Opsi</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {/* Option: Tanpa Upgrade SSD */}
-              <button
-                type="button"
-                onClick={() => setSelectedSsd(null)}
-                className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between ${
-                  selectedSsd === null
-                    ? "border-[#141414] dark:border-white bg-[#F4F6F9] dark:bg-zinc-800/90 shadow-xs"
-                    : "border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/50"
-                }`}
-              >
-                <div>
-                  <div className="text-xs font-bold text-[#111111] dark:text-white">
-                    Tanpa Upgrade SSD
-                  </div>
-                  <div className="text-[11px] text-[#8D939E] mt-0.5">
-                    Gunakan kapasitas SSD bawaan laptop
-                  </div>
-                </div>
-                <div className="text-right shrink-0 ml-2">
-                  <span className="text-xs font-mono font-semibold text-[#8D939E]">Rp 0</span>
-                  {selectedSsd === null && (
-                    <div className="w-4 h-4 rounded-full bg-[#111111] dark:bg-white text-white dark:text-black flex items-center justify-center mt-1 ml-auto">
-                      <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+            {targetProduct && targetProduct.is_ssd_upgradable === false ? (
+              <div className="p-3.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 text-xs text-[#676B74] dark:text-zinc-400">
+                Slot SSD pada unit ini tidak mendukung penambahan. Spesifikasi SSD menggunakan bawaan pabrik.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Option: Tanpa Upgrade SSD */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedSsd(null)}
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+                    selectedSsd === null
+                      ? "border-[#141414] dark:border-white bg-[#F4F6F9] dark:bg-zinc-800/90 shadow-xs"
+                      : "border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/50"
+                  }`}
+                >
+                  <div>
+                    <div className="text-xs font-bold text-[#111111] dark:text-white">
+                      Tanpa Upgrade SSD
                     </div>
-                  )}
-                </div>
-              </button>
-
-              {/* Dynamic SSD Options */}
-              {ssdOptions.map((opt) => {
-                const isSelected = selectedSsd?.id === opt.id;
-                const isOutOfStock = !opt.is_active;
-
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    disabled={isOutOfStock}
-                    onClick={() => !isOutOfStock && setSelectedSsd(opt)}
-                    className={`p-3.5 rounded-2xl border text-left transition-all flex items-center justify-between ${
-                      isOutOfStock
-                        ? "opacity-45 bg-zinc-100 dark:bg-zinc-850 border-zinc-200 dark:border-zinc-800 cursor-not-allowed"
-                        : isSelected
-                        ? "border-[#141414] dark:border-white bg-[#F4F6F9] dark:bg-zinc-800/90 shadow-xs cursor-pointer"
-                        : "border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/50 cursor-pointer"
-                    }`}
-                  >
-                    <div>
-                      <div className="text-xs font-bold text-[#111111] dark:text-white">
-                        {opt.name}
-                      </div>
-                      <div className="text-[11px] font-mono text-[#8D939E] mt-0.5">
-                        {opt.slot_type}
-                      </div>
+                    <div className="text-[11px] text-[#8D939E] mt-0.5">
+                      Gunakan kapasitas SSD bawaan laptop
                     </div>
-                    <div className="text-right shrink-0 ml-2">
-                      {isOutOfStock ? (
-                        <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-300 text-[10px] font-semibold">
-                          Stok Habis
-                        </span>
-                      ) : (
-                        <>
-                          <span className="text-xs font-mono font-bold text-[#111111] dark:text-white block">
-                            +{formatRupiah(opt.price)}
+                  </div>
+                  <div className="text-right shrink-0 ml-2">
+                    <span className="text-xs font-mono font-semibold text-[#8D939E]">Rp 0</span>
+                    {selectedSsd === null && (
+                      <div className="w-4 h-4 rounded-full bg-[#111111] dark:bg-white text-white dark:text-black flex items-center justify-center mt-1 ml-auto">
+                        <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+                      </div>
+                    )}
+                  </div>
+                </button>
+
+                {/* Dynamic SSD Options */}
+                {ssdOptions.map((opt) => {
+                  const isSelected = selectedSsd?.id === opt.id;
+                  const isOutOfStock = !opt.is_active;
+
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      disabled={isOutOfStock}
+                      onClick={() => !isOutOfStock && setSelectedSsd(opt)}
+                      className={`p-3.5 rounded-2xl border text-left transition-all flex items-center justify-between ${
+                        isOutOfStock
+                          ? "opacity-45 bg-zinc-100 dark:bg-zinc-850 border-zinc-200 dark:border-zinc-800 cursor-not-allowed"
+                          : isSelected
+                          ? "border-[#141414] dark:border-white bg-[#F4F6F9] dark:bg-zinc-800/90 shadow-xs cursor-pointer"
+                          : "border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/50 cursor-pointer"
+                      }`}
+                    >
+                      <div>
+                        <div className="text-xs font-bold text-[#111111] dark:text-white">
+                          {opt.name}
+                        </div>
+                        <div className="text-[11px] font-mono text-[#8D939E] mt-0.5">
+                          {opt.slot_type}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 ml-2">
+                        {isOutOfStock ? (
+                          <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-300 text-[10px] font-semibold">
+                            Stok Habis
                           </span>
-                          {isSelected && (
-                            <div className="w-4 h-4 rounded-full bg-[#111111] dark:bg-white text-white dark:text-black flex items-center justify-center mt-1 ml-auto">
-                              <Check className="w-2.5 h-2.5 stroke-[2.5]" />
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                        ) : (
+                          <>
+                            <span className="text-xs font-mono font-bold text-[#111111] dark:text-white block">
+                              +{formatRupiah(opt.price)}
+                            </span>
+                            {isSelected && (
+                              <div className="w-4 h-4 rounded-full bg-[#111111] dark:bg-white text-white dark:text-black flex items-center justify-center mt-1 ml-auto">
+                                <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* ==============================================================
@@ -335,7 +384,7 @@ export const CustomUpgradeModal: React.FC<CustomUpgradeModalProps> = ({
           <div className="p-4 sm:p-5 rounded-2xl bg-[#F0F4F8] dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 space-y-3">
             <div className="flex items-center justify-between text-xs pb-2 border-b border-zinc-200 dark:border-zinc-800">
               <span className="font-semibold text-[#676B74] dark:text-zinc-400">
-                Rincian Upgrade Terpilih
+                Rincian Kalkulasi Harga
               </span>
               <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium text-[11px]">
                 <Wrench className="w-3 h-3" />
@@ -344,6 +393,14 @@ export const CustomUpgradeModal: React.FC<CustomUpgradeModalProps> = ({
             </div>
 
             <div className="space-y-1.5 text-xs">
+              {targetProduct && (
+                <div className="flex justify-between items-center text-[#2D3138] dark:text-zinc-300">
+                  <span>Harga Unit Laptop:</span>
+                  <span className="font-semibold font-mono">
+                    {formatRupiah(targetProduct.discount_price || targetProduct.price)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between items-center text-[#2D3138] dark:text-zinc-300">
                 <span>Modul RAM:</span>
                 <span className="font-semibold font-mono">
@@ -360,14 +417,22 @@ export const CustomUpgradeModal: React.FC<CustomUpgradeModalProps> = ({
 
             <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
               <div>
-                <span className="text-[11px] text-[#8D939E] block">Total Estimasi Biaya Upgrade:</span>
+                <span className="text-[11px] text-[#8D939E] block">
+                  {targetProduct ? "Total Harga Unit (Termasuk Upgrade):" : "Total Estimasi Biaya Upgrade:"}
+                </span>
                 <span className="text-lg sm:text-xl font-mono font-extrabold text-[#111111] dark:text-white">
-                  +{formatRupiah(totalCost)}
+                  {formatRupiah(
+                    (targetProduct ? (targetProduct.discount_price || targetProduct.price) : 0) + totalCost
+                  )}
                 </span>
               </div>
-              {totalCost > 0 && (
-                <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-[#141414] dark:bg-white text-white dark:text-black">
-                  Paket Aktif
+              {totalCost > 0 ? (
+                <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                  + Upgrade {formatRupiah(totalCost)}
+                </span>
+              ) : (
+                <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                  Spek Standar
                 </span>
               )}
             </div>
@@ -381,20 +446,61 @@ export const CustomUpgradeModal: React.FC<CustomUpgradeModalProps> = ({
           <button
             type="button"
             onClick={handleConsultWhatsApp}
-            className="w-full sm:w-auto h-11 px-5 rounded-full border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-[#141414] dark:text-zinc-200 text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors"
+            className="w-full sm:w-auto h-11 px-4 rounded-full border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-[#141414] dark:text-zinc-200 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
           >
             <MessageCircle className="w-3.5 h-3.5" />
-            <span>Tanya Kecocokan Slot</span>
+            <span>Tanya Teknisi</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleApply}
-            className="w-full sm:w-auto h-11 px-7 rounded-full bg-[#141414] dark:bg-white hover:bg-[#262626] dark:hover:bg-zinc-100 text-white dark:text-black text-xs font-bold flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"
-          >
-            <span>Terapkan & Pilih Laptop</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto justify-end">
+            {targetProduct ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onAddToCart) {
+                      onAddToCart(targetProduct, null);
+                    }
+                    onClose();
+                  }}
+                  className="w-full sm:w-auto h-11 px-5 rounded-full border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[#141414] dark:text-white text-xs font-semibold flex items-center justify-center transition cursor-pointer"
+                >
+                  Beli Spek Bawaan (Tanpa Upgrade)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const plan: SelectedUpgradePlan = {
+                      ram: selectedRam,
+                      ssd: selectedSsd,
+                    };
+                    if (onAddToCart) {
+                      onAddToCart(targetProduct, totalCost > 0 ? plan : null);
+                    }
+                    onClose();
+                  }}
+                  className="w-full sm:w-auto h-11 px-6 rounded-full bg-[#141414] dark:bg-white hover:bg-[#262626] dark:hover:bg-zinc-100 text-white dark:text-black text-xs font-bold flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"
+                >
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <span>
+                    {totalCost > 0
+                      ? `Tambah ke Keranjang (+${formatRupiah(totalCost)})`
+                      : "Tambah ke Keranjang"}
+                  </span>
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={handleApply}
+                className="w-full sm:w-auto h-11 px-7 rounded-full bg-[#141414] dark:bg-white hover:bg-[#262626] dark:hover:bg-zinc-100 text-white dark:text-black text-xs font-bold flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"
+              >
+                <span>Terapkan & Pilih Laptop</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -59,8 +59,7 @@ export default function LandingPage() {
 
   // Custom Upgrade state
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
-  const [appliedUpgradePlan, setAppliedUpgradePlan] = useState<SelectedUpgradePlan | null>(null);
-  const [showOnlyUpgradable, setShowOnlyUpgradable] = useState(false);
+  const [upgradeTargetProduct, setUpgradeTargetProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -96,8 +95,7 @@ export default function LandingPage() {
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.sku.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesUpgradable = !showOnlyUpgradable || p.is_ram_upgradable || p.is_ssd_upgradable;
-    return matchesCategory && matchesSearch && matchesUpgradable;
+    return matchesCategory && matchesSearch;
   });
 
   const featuredProduct = products.find((p) => p.is_featured) || products[0];
@@ -230,15 +228,12 @@ export default function LandingPage() {
               </h2>
             </div>
 
-            {/* Quick Category Filters & Upgradable Toggle */}
+            {/* Quick Category Filters */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
               <button
-                onClick={() => {
-                  setSelectedCategory("all");
-                  setShowOnlyUpgradable(false);
-                }}
+                onClick={() => setSelectedCategory("all")}
                 className={`px-4 py-2 rounded-full text-xs font-semibold transition cursor-pointer shrink-0 ${
-                  selectedCategory === "all" && !showOnlyUpgradable
+                  selectedCategory === "all"
                     ? "bg-[#141414] dark:bg-white text-white dark:text-black shadow-sm"
                     : "bg-[#F0F3F7] text-[#2D3138] hover:bg-[#E2E7EE]"
                 }`}
@@ -246,24 +241,12 @@ export default function LandingPage() {
                 Semua ({products.length})
               </button>
 
-              <button
-                onClick={() => setShowOnlyUpgradable(!showOnlyUpgradable)}
-                className={`px-4 py-2 rounded-full text-xs font-semibold transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                  showOnlyUpgradable
-                    ? "bg-[#141414] dark:bg-white text-white dark:text-black shadow-sm"
-                    : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 hover:bg-emerald-100"
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Hanya Upgradable</span>
-              </button>
-
               {categories.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setSelectedCategory(c.slug)}
                   className={`px-4 py-2 rounded-full text-xs font-semibold transition cursor-pointer shrink-0 ${
-                    selectedCategory === c.slug && !showOnlyUpgradable
+                    selectedCategory === c.slug
                       ? "bg-[#141414] dark:bg-white text-white dark:text-black shadow-sm"
                       : "bg-[#F0F3F7] text-[#2D3138] hover:bg-[#E2E7EE]"
                   }`}
@@ -274,57 +257,12 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Active Custom Upgrade Simulation Banner */}
-          {appliedUpgradePlan && (appliedUpgradePlan.ram || appliedUpgradePlan.ssd) && (
-            <div className="p-4 rounded-2xl bg-[#EEF3F8] dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#141414] dark:bg-white text-white dark:text-black flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-[#111111] dark:text-white flex items-center gap-2">
-                    <span>Simulasi Custom Upgrade Diterapkan</span>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold">
-                      +{formatRupiah((appliedUpgradePlan.ram?.price || 0) + (appliedUpgradePlan.ssd?.price || 0))}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-[#676B74] dark:text-zinc-300 mt-0.5">
-                    {appliedUpgradePlan.ram ? `RAM: ${appliedUpgradePlan.ram.name}` : "RAM: Bawaan"}
-                    {" • "}
-                    {appliedUpgradePlan.ssd ? `SSD: ${appliedUpgradePlan.ssd.name}` : "SSD: Bawaan"}
-                    {" (Garansi Resmi 100% Tetap Aktif)"}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 self-end sm:self-auto">
-                <button
-                  onClick={() => setIsUpgradeModalOpen(true)}
-                  className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800 text-[#141414] dark:text-white text-xs font-semibold border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 cursor-pointer shadow-xs"
-                >
-                  Ubah Paket
-                </button>
-                <button
-                  onClick={() => setAppliedUpgradePlan(null)}
-                  className="px-3 py-1.5 rounded-full text-zinc-500 hover:text-red-500 text-xs font-medium cursor-pointer"
-                >
-                  Reset
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Product Cards Grid (Matching the Materials Card Style) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredProducts.map((p) => {
               const discount = calculateDiscountPercentage(p.price, p.discount_price);
               const isUpgradable = Boolean(p.is_ram_upgradable || p.is_ssd_upgradable);
-
-              const ramAdd = isUpgradable && appliedUpgradePlan?.ram ? appliedUpgradePlan.ram.price : 0;
-              const ssdAdd = isUpgradable && appliedUpgradePlan?.ssd ? appliedUpgradePlan.ssd.price : 0;
-              const totalUpgradeAdd = ramAdd + ssdAdd;
-
               const basePrice = p.discount_price || p.price;
-              const finalCombinedPrice = basePrice + totalUpgradeAdd;
 
               return (
                 <div
@@ -344,10 +282,11 @@ export default function LandingPage() {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
+                              setUpgradeTargetProduct(p);
                               setIsUpgradeModalOpen(true);
                             }}
                             className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200/80 dark:border-emerald-800/80 flex items-center gap-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 cursor-pointer transition"
-                            title="Klik untuk simulasi kustomisasi RAM & SSD"
+                            title="Klik untuk memilih opsi kustomisasi RAM & SSD"
                           >
                             <Sparkles className="w-2.5 h-2.5" /> Upgradable
                           </button>
@@ -414,19 +353,14 @@ export default function LandingPage() {
                     <div className="mb-3">
                       <div className="flex items-baseline gap-2">
                         <span className="font-mono text-base font-bold text-[#111111] dark:text-white">
-                          {formatRupiah(finalCombinedPrice)}
+                          {formatRupiah(basePrice)}
                         </span>
-                        {p.discount_price && totalUpgradeAdd === 0 && (
+                        {p.discount_price && (
                           <span className="font-mono text-xs text-[#8D939E] line-through">
                             {formatRupiah(p.price)}
                           </span>
                         )}
                       </div>
-                      {totalUpgradeAdd > 0 && (
-                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold block mt-0.5">
-                          Termasuk Custom Upgrade (+{formatRupiah(totalUpgradeAdd)})
-                        </span>
-                      )}
                     </div>
 
                     <div className="grid grid-cols-12 gap-2">
@@ -439,13 +373,14 @@ export default function LandingPage() {
                       <button
                         type="button"
                         disabled={p.stock_status === "out_of_stock"}
-                        onClick={() =>
-                          addToCart(
-                            p,
-                            1,
-                            isUpgradable && appliedUpgradePlan ? appliedUpgradePlan : undefined
-                          )
-                        }
+                        onClick={() => {
+                          if (isUpgradable) {
+                            setUpgradeTargetProduct(p);
+                            setIsUpgradeModalOpen(true);
+                          } else {
+                            addToCart(p, 1, null);
+                          }
+                        }}
                         className="col-span-4 h-[38px] rounded-full border border-[#141414] dark:border-white bg-transparent hover:bg-[#141414] hover:text-white dark:hover:bg-white dark:hover:text-black text-[#141414] dark:text-white text-xs font-semibold flex items-center justify-center gap-1 transition cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
                         title={p.stock_status === "out_of_stock" ? "Stok habis" : "Tambah ke Keranjang"}
                       >
@@ -456,11 +391,7 @@ export default function LandingPage() {
                         href={
                           p.stock_status === "out_of_stock"
                             ? undefined
-                            : generateWhatsAppLink(
-                                p,
-                                undefined,
-                                isUpgradable && appliedUpgradePlan ? appliedUpgradePlan : undefined
-                              )
+                            : generateWhatsAppLink(p)
                         }
                         aria-disabled={p.stock_status === "out_of_stock"}
                         title={p.stock_status === "out_of_stock" ? "Stok habis" : undefined}
@@ -605,41 +536,6 @@ export default function LandingPage() {
                   <div>
                     <h4 className="text-xl font-bold mb-3 text-[#111111] dark:text-white">Navigasi Toko</h4>
                     <div className="space-y-2">
-                      <button
-                        onClick={() => {
-                          setActiveModal(null);
-                          handleScrollToCatalog();
-                        }}
-                        className="w-full p-3 text-left rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold flex items-center justify-between text-[#111111] dark:text-white transition cursor-pointer"
-                      >
-                        <span>Katalog Lengkap</span>
-                        <ArrowUpRight className="w-4 h-4 text-[#111111] dark:text-zinc-400" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setActiveModal(null);
-                          setIsUpgradeModalOpen(true);
-                        }}
-                        className="w-full p-3 text-left rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold flex items-center justify-between text-[#111111] dark:text-white transition cursor-pointer"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                          <span>Simulasi Custom Upgrade (RAM & SSD)</span>
-                        </span>
-                        <ArrowUpRight className="w-4 h-4 text-[#111111] dark:text-zinc-400" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setActiveModal("ai");
-                        }}
-                        className="w-full p-3 text-left rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-semibold flex items-center justify-between text-[#111111] dark:text-white transition cursor-pointer"
-                      >
-                        <span className="flex items-center gap-2">
-                          <MessageCircle className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                          <span>Konsultasi Gratis via WhatsApp</span>
-                        </span>
-                        <ArrowUpRight className="w-4 h-4 text-[#111111] dark:text-zinc-400" />
-                      </button>
                       <Link
                         href="/tentang"
                         onClick={() => setActiveModal(null)}
@@ -789,56 +685,64 @@ export default function LandingPage() {
                 <div>
                   <span className="text-xs text-[#8D939E] block">Harga</span>
                   <span className="text-xl sm:text-2xl font-bold font-mono text-[#111111] dark:text-white">
-                    {formatRupiah(
-                      (selectedProduct.discount_price || selectedProduct.price) +
-                        (appliedUpgradePlan && (selectedProduct.is_ram_upgradable || selectedProduct.is_ssd_upgradable)
-                          ? (selectedProduct.is_ram_upgradable && appliedUpgradePlan.ram ? appliedUpgradePlan.ram.price : 0) +
-                            (selectedProduct.is_ssd_upgradable && appliedUpgradePlan.ssd ? appliedUpgradePlan.ssd.price : 0)
-                          : 0)
-                    )}
+                    {formatRupiah(selectedProduct.discount_price || selectedProduct.price)}
                   </span>
-                  {appliedUpgradePlan && (selectedProduct.is_ram_upgradable || selectedProduct.is_ssd_upgradable) && (
-                    <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-semibold block">
-                      (Termasuk Custom Upgrade Terpilih)
-                    </span>
-                  )}
                 </div>
-                <a
-                  href={
-                    selectedProduct.stock_status === "out_of_stock"
-                      ? undefined
-                      : generateWhatsAppLink(
-                          selectedProduct,
-                          undefined,
-                          selectedProduct.is_ram_upgradable || selectedProduct.is_ssd_upgradable
-                            ? appliedUpgradePlan || undefined
-                            : undefined
-                        )
-                  }
-                  aria-disabled={selectedProduct.stock_status === "out_of_stock"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="aria-disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none px-6 py-2.5 rounded-full bg-[#141414] dark:bg-white text-white dark:text-black font-semibold text-xs flex items-center gap-2 shadow"
-                >
-                  <MessageCircle className="w-4 h-4 text-white dark:text-black" />
-                  <span>Order Sekarang</span>
-                </a>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={selectedProduct.stock_status === "out_of_stock"}
+                    onClick={() => {
+                      const isUpgradable = Boolean(
+                        selectedProduct.is_ram_upgradable || selectedProduct.is_ssd_upgradable
+                      );
+                      const prodToUpgrade = selectedProduct;
+                      setSelectedProduct(null);
+                      if (isUpgradable) {
+                        setUpgradeTargetProduct(prodToUpgrade);
+                        setIsUpgradeModalOpen(true);
+                      } else {
+                        addToCart(prodToUpgrade, 1, null);
+                        setIsCartOpen(true);
+                      }
+                    }}
+                    className="px-5 py-2.5 rounded-full border border-[#141414] dark:border-white text-[#141414] dark:text-white hover:bg-[#141414] hover:text-white dark:hover:bg-white dark:hover:text-black font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-40"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>+Keranjang</span>
+                  </button>
+                  <a
+                    href={
+                      selectedProduct.stock_status === "out_of_stock"
+                        ? undefined
+                        : generateWhatsAppLink(selectedProduct)
+                    }
+                    aria-disabled={selectedProduct.stock_status === "out_of_stock"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="aria-disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none px-5 py-2.5 rounded-full bg-[#141414] dark:bg-white text-white dark:text-black font-semibold text-xs flex items-center gap-1.5 shadow"
+                  >
+                    <MessageCircle className="w-4 h-4 text-white dark:text-black" />
+                    <span>Order WA</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Custom Upgrade Simulation Modal */}
+        {/* Custom Upgrade Modal (Per-Product when clicking +Cart or Upgradable badge) */}
         <CustomUpgradeModal
           isOpen={isUpgradeModalOpen}
-          onClose={() => setIsUpgradeModalOpen(false)}
-          onApplyUpgrade={(plan) => {
-            setAppliedUpgradePlan(plan);
-            if (plan.ram || plan.ssd) {
-              setShowOnlyUpgradable(true);
-            }
+          onClose={() => {
+            setIsUpgradeModalOpen(false);
+            setUpgradeTargetProduct(null);
           }}
-          currentPlan={appliedUpgradePlan || undefined}
+          targetProduct={upgradeTargetProduct}
+          onAddToCart={(product, plan) => {
+            addToCart(product, 1, plan);
+            setIsCartOpen(true);
+          }}
         />
       </div>
     </div>

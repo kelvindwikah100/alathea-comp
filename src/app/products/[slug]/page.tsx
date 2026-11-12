@@ -491,7 +491,14 @@ function ProductDetailContent() {
                           <button
                             type="button"
                             disabled={product.stock_status === "out_of_stock"}
-                            onClick={() => addToCart(product, 1, isUpgradable && upgradePlan ? upgradePlan : undefined)}
+                            onClick={() => {
+                              if (isUpgradable && !upgradePlan) {
+                                setIsUpgradeModalOpen(true);
+                              } else {
+                                addToCart(product, 1, isUpgradable && upgradePlan ? upgradePlan : undefined);
+                                setIsCartOpen(true);
+                              }
+                            }}
                             className="w-full h-[48px] rounded-full border-2 border-[#141414] dark:border-white bg-transparent hover:bg-[#141414] hover:text-white dark:hover:bg-white dark:hover:text-black text-[#141414] dark:text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
                           >
                             <ShoppingBag className="w-4 h-4" />
@@ -703,6 +710,12 @@ function ProductDetailContent() {
           onClose={() => setIsUpgradeModalOpen(false)}
           onApplyUpgrade={(plan) => setUpgradePlan(plan)}
           currentPlan={upgradePlan || undefined}
+          targetProduct={product}
+          onAddToCart={(prod, plan) => {
+            setUpgradePlan(plan);
+            addToCart(prod, 1, plan);
+            setIsCartOpen(true);
+          }}
         />
       </div>
     </div>
