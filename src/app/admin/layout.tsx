@@ -41,7 +41,7 @@ interface AdminLayoutProps {
 
 const NAV_ITEMS = [
   {
-    label: "Dashboard",
+    label: "Ringkasan Dashboard",
     href: "/admin",
     icon: LayoutDashboard,
     exact: true,
@@ -53,37 +53,31 @@ const NAV_ITEMS = [
     exact: false,
   },
   {
-    label: "Kelola Produk",
+    label: "Katalog Produk",
     href: "/admin/products",
     icon: Package,
     exact: false,
   },
   {
-    label: "Kelola Kategori",
+    label: "Kategori Produk",
     href: "/admin/categories",
     icon: Layers,
     exact: false,
   },
   {
-    label: "Custom Upgrade",
+    label: "Upgrade RAM & SSD",
     href: "/admin/upgrades",
     icon: Sliders,
     exact: false,
   },
   {
-    label: "Tampilan Beranda",
-    href: "/admin/homepage",
-    icon: MonitorSmartphone,
-    exact: false,
-  },
-  {
-    label: "Tentang Toko",
+    label: "Profil & Kontak Toko",
     href: "/admin/about",
     icon: Info,
     exact: false,
   },
   {
-    label: "Pengaturan Akun",
+    label: "Akun & Keamanan",
     href: "/admin/settings",
     icon: UserCog,
     exact: false,
@@ -136,14 +130,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   const getPageTitle = () => {
-    if (pathname === "/admin") return "Dashboard Overview";
-    if (pathname.startsWith("/admin/sales")) return "Laporan Penjualan & Penghasilan";
-    if (pathname.startsWith("/admin/products")) return "Kelola Katalog Produk";
-    if (pathname.startsWith("/admin/categories")) return "Kelola Kategori Hardware";
-    if (pathname.startsWith("/admin/upgrades")) return "Kelola Custom Upgrade (RAM & SSD)";
-    if (pathname.startsWith("/admin/about")) return "Kelola Tentang Toko";
-    if (pathname.startsWith("/admin/homepage")) return "Kelola Tampilan Beranda";
-    if (pathname.startsWith("/admin/settings")) return "Pengaturan Akun & Keamanan";
+    if (pathname === "/admin") return "Ringkasan Dashboard";
+    if (pathname.startsWith("/admin/sales")) return "Penjualan & Omset";
+    if (pathname.startsWith("/admin/products")) return "Katalog Produk";
+    if (pathname.startsWith("/admin/categories")) return "Kategori Produk";
+    if (pathname.startsWith("/admin/upgrades")) return "Upgrade RAM & SSD";
+    if (pathname.startsWith("/admin/about")) return "Profil & Kontak Toko";
+    if (pathname.startsWith("/admin/settings")) return "Akun & Keamanan";
     return "Admin CMS";
   };
 

@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   Layers,
-  Plus,
   ArrowRight,
   TrendingUp,
   ExternalLink,
@@ -19,26 +18,12 @@ import {
   Keyboard,
   Mouse,
   Headphones,
-  RefreshCw,
-  FileSpreadsheet,
-  FileDown,
-  DollarSign,
-  Receipt,
 } from "lucide-react";
 import { getProducts, getCategories } from "@/lib/services/catalog";
-import {
-  getSalesTransactions,
-  getSalesSummary,
-  exportSalesToExcel,
-  exportSalesToPDF,
-} from "@/lib/services/sales";
 import { Product, Category } from "@/types/database";
-import { SalesSummary, SaleTransaction } from "@/types/sales";
 import { formatIDR } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { toast } from "sonner";
 
 // Map category icons to Lucide components
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
@@ -55,8 +40,6 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
 export default function AdminDashboardPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [salesSummary, setSalesSummary] = useState<SalesSummary | null>(null);
-  const [salesTx, setSalesTx] = useState<SaleTransaction[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
@@ -65,11 +48,6 @@ export default function AdminDashboardPage() {
       const [prods, cats] = await Promise.all([getProducts(), getCategories()]);
       setProducts(prods);
       setCategories(cats);
-
-      // Load Sales
-      const tx = getSalesTransactions();
-      setSalesTx(tx);
-      setSalesSummary(getSalesSummary(tx));
     } catch (err) {
       console.error("Failed to load dashboard data", err);
     } finally {
@@ -80,19 +58,6 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     loadData();
   }, []);
-
-  // Handlers for quick export
-  const handleQuickExportExcel = () => {
-    if (salesTx.length === 0) return;
-    exportSalesToExcel(salesTx);
-    toast.success("File Excel Penjualan Berhasil Diunduh!");
-  };
-
-  const handleQuickExportPDF = () => {
-    if (salesTx.length === 0) return;
-    exportSalesToPDF(salesTx);
-    toast.success("Laporan PDF Penjualan Berhasil Diunduh!");
-  };
 
   // Compute KPI metrics
   const totalProducts = products.length;
@@ -121,100 +86,13 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Ringkasan Dashboard
-          </h1>
-          <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-            Pantau status katalog, ketersediaan inventaris, serta rekap omset penjualan hardware.
-          </p>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadData}
-            disabled={loading}
-            className="rounded-xl border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-xs gap-1.5 h-10 shadow-xs"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-            <span>Segarkan</span>
-          </Button>
-          <Link href="/admin/products?action=new">
-            <Button className="clay-button rounded-xl text-xs gap-1.5 h-10 px-4 font-semibold shadow-sm">
-              <Plus className="w-4 h-4" />
-              <span>Tambah Produk</span>
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Revenue & Sales Executive Card Banner */}
-      <div className="clay-card rounded-2xl p-5 sm:p-6 border border-neutral-300/80 dark:border-neutral-800 bg-gradient-to-r from-neutral-50 to-neutral-100/70 dark:from-neutral-900/90 dark:to-neutral-950 flex flex-col lg:flex-row lg:items-center justify-between gap-5 shadow-sm">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-              <DollarSign className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                Total Omset Penjualan Aktif
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-neutral-900 dark:text-neutral-100">
-                  {salesSummary ? formatIDR(salesSummary.totalRevenue) : "..."}
-                </span>
-                <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-mono">
-                  +24.8% MoM
-                </Badge>
-              </div>
-            </div>
-          </div>
-          <p className="text-xs text-neutral-600 dark:text-neutral-400">
-            Terdiri dari{" "}
-            <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-              {salesSummary?.completedTransactions || 0} transaksi lunas
-            </span>{" "}
-            dan{" "}
-            <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-              {salesSummary?.totalUnitsSold || 0} unit hardware
-            </span>{" "}
-            laptop & komponen terkirim.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5 pt-2 lg:pt-0 border-t lg:border-t-0 border-neutral-200 dark:border-neutral-800">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleQuickExportExcel}
-            className="h-9 rounded-xl text-xs font-medium border-emerald-500/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 gap-1.5 shadow-xs"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            <span>Excel (.xlsx)</span>
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleQuickExportPDF}
-            className="h-9 rounded-xl text-xs font-medium border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-800 gap-1.5 shadow-xs"
-          >
-            <FileDown className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
-            <span>PDF (.pdf)</span>
-          </Button>
-          <Link href="/admin/sales">
-            <Button
-              size="sm"
-              className="h-9 rounded-xl clay-button text-xs font-semibold gap-1.5 px-3.5 shadow-xs"
-            >
-              <span>Laporan Lengkap</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
-          </Link>
-        </div>
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
+          Ringkasan Dashboard
+        </h1>
+        <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+          Pantau status katalog, klasifikasi kategori, dan ketersediaan inventaris hardware toko.
+        </p>
       </div>
 
       {/* 4 Tactile Clay KPI Cards */}
